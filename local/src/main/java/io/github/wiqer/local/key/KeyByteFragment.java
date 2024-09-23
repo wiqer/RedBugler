@@ -39,6 +39,12 @@ public class KeyByteFragment {
          return keyHashFragment[hashAlgorithm.skipPrefixHash(key,prefix,TableIndexSize)] * lostTimes;
     }
 
+    public void clear() {
+        this.hyperLogLog.clear();
+        numberOfTimes = 0;
+        lostTimes = 0;
+    }
+
     public static void main(String[] args) {
         int[] keyHashFragment = new int[InternalPageSize];
         long time = System.currentTimeMillis();

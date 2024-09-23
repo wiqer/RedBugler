@@ -18,7 +18,8 @@ public class DefaultHashAlgorithmGroup implements HashAlgorithmGroup {
 
     SimpleHashAlgorithm simpleHashAlgorithm = new SimpleHashAlgorithm();
 
-    HashAlgorithm getByName(String name){
+    @Override
+    public HashAlgorithm getByName(String name){
         if("abc".equalsIgnoreCase(name)){
             return abcHashAlgorithm;
         }

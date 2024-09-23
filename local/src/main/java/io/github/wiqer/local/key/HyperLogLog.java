@@ -62,6 +62,10 @@ public class HyperLogLog {
         return (double) SIZE * Math.log(SIZE * 1.0 / sum) / Math.log(2);
     }
 
+    public void clear() {
+        bitSet.clear();
+    }
+
     public static void main(String[] args) {
         HyperLogLog hll = new HyperLogLog();
         // 测试添加一些数据
