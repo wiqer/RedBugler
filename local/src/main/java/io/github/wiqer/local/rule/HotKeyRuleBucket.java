@@ -4,7 +4,6 @@ import io.github.wiqer.local.hash.HashAlgorithm;
 import io.github.wiqer.local.hash.group.HashAlgorithmGroup;
 import io.github.wiqer.local.key.KeyByteFragment;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -34,12 +33,15 @@ public class HotKeyRuleBucket {
     private volatile long runThreadId;
 
     /**
-     * | **** |当前活动时期的运行状态，0 未运行，1，正在运行|
+     * | **** |0 可用| 0 已删除完成 ，1 正在删除|当前活动时期的运行 add状态，0 未运行，1，正在运行|
      */
     private volatile int status = 0;
+
     public HotKeyRuleBucket(List<HashAlgorithm> hashAlgorithm) {
         this.id = nextId.getAndIncrement();
-        this.hashAlgorithm = hashAlgorithm;
+        this.hashAlgorithm = hashAlgorithm.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());;
         this.keyByteFragmentList = hashAlgorithm.stream().map(KeyByteFragment::new).collect(Collectors.toList());
     }
 
@@ -69,6 +71,7 @@ public class HotKeyRuleBucket {
         return id;
     }
 
+    @Deprecated
     public boolean add(String key){
         if(multithreadedCache.offer(key)){
             return true;
@@ -87,6 +90,25 @@ public class HotKeyRuleBucket {
          * 处理不了的直接丢弃了，防止内存和cpu全崩溃
          */
         else return false;
+    }
+
+    public boolean getAndSet(int hash, HashAlgorithm hashAlgorithm){
+        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
+            if(keyByteFragment.getHashAlgorithm(hashAlgorithm)){
+                keyByteFragment.add(hash);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int get(int hash, HashAlgorithm hashAlgorithm){
+        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
+            if(keyByteFragment.getHashAlgorithm(hashAlgorithm)){
+                return keyByteFragment.get(hash);
+            }
+        }
+        return 0;
     }
 
     private void concurrentRun(){
@@ -119,6 +141,42 @@ public class HotKeyRuleBucket {
             synchronized (this){
                 if((status & 1) == 1){
                     status = status & 0xFFE;
+                }
+            }
+        }
+    }
+
+    public void clear() {
+        /**
+         * 没有任务清理，发起任务清理
+         */
+        if((status & 0b110) == 0){
+            synchronized (this){
+                if((status & 0b110) == 0){
+                    status = status|0b110;
+                    threadPoolExecutor.execute(this::clearRun);
+                }
+            }
+        }
+    }
+
+
+    public void clearRun() {
+        if((status & 0b110) == 0){
+            synchronized (this){
+                if((status & 0b110) != 0){
+                    return;
+                }
+                status = status|0b110;
+            }
+        }
+        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
+            keyByteFragment.clear();
+        }
+        if((status & 1) == 1){
+            synchronized (this){
+                if((status & 1) == 1){
+                    status = status & 0xFF9;
                 }
             }
         }

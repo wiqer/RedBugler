@@ -3,6 +3,8 @@ package io.github.wiqer.local.key;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import io.github.wiqer.local.hash.HashAlgorithm;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 public class KeyByteFragment {
 
     static final int InternalPageSize = Unsafe.getUnsafe().pageSize();
@@ -10,14 +12,21 @@ public class KeyByteFragment {
     private final HashAlgorithm hashAlgorithm;
 
     private final byte[] keyHashFragment = new byte[InternalPageSize];
+    private final ReentrantLock[] keyHashFragmentLock = new ReentrantLock[InternalPageSize >> 8];
 
     MyHyperLogLog myHyperLogLog = new MyHyperLogLog(1000);
     private long numberOfTimes  = 0;
     private int lostTimes  = 1;
 
-
     public KeyByteFragment(HashAlgorithm hashAlgorithm) {
         this.hashAlgorithm = hashAlgorithm;
+        for (int i = 0; i < keyHashFragmentLock.length; i++) {
+            keyHashFragmentLock[i] = new ReentrantLock();
+        }
+    }
+
+    public int hash(String key, String prefix) {
+        return hashAlgorithm.skipPrefixHash(key, prefix);
     }
 
     public void add(String key, String prefix){
@@ -25,6 +34,24 @@ public class KeyByteFragment {
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
         myHyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
+        reBaseTable(hashIndex, times);
+    }
+
+    public void add(int hash){
+        final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
+        myHyperLogLog.add(hash);
+        byte times = keyHashFragment[hashIndex];
+        ReentrantLock lock = keyHashFragmentLock[hashIndex>>8];
+        lock.lock();
+        try {
+            reBaseTable(hashIndex, times);
+        }finally {
+            lock.unlock();
+        }
+
+    }
+
+    private void reBaseTable(int hashIndex, byte times) {
         if(times == 127){
             lostTimes++;
             for (int i = 0; i < keyHashFragment.length; i++){
@@ -35,8 +62,13 @@ public class KeyByteFragment {
         keyHashFragment[hashIndex]++;
     }
 
+
     public int get(String key, String prefix){
          return keyHashFragment[hashAlgorithm.skipPrefixHash(key,prefix,TableIndexSize)] * lostTimes;
+    }
+
+    public int get(int hash){
+        return keyHashFragment[hashAlgorithm.getHashIndex(hash,TableIndexSize)] * lostTimes;
     }
 
     public void clear() {
@@ -45,20 +77,7 @@ public class KeyByteFragment {
         lostTimes = 0;
     }
 
-    public static void main(String[] args) {
-        int[] keyHashFragment = new int[InternalPageSize];
-        long time = System.currentTimeMillis();
-        for (int i = 0; i < 4096; i++) {
-            keyHashFragment[i] = (byte) i;
-        }
-        for (int i = 0; i < 4096; i++) {
-            keyHashFragment[i] = (byte) (keyHashFragment[i] / 2);
-        }
-        for (int j = 0; j < 3000; j++) {
-
-        }
-
-        time = System.currentTimeMillis() - time;
-        System.out.println(time);
+    public boolean getHashAlgorithm(HashAlgorithm ha) {
+        return ha.equals(hashAlgorithm);
     }
 }
