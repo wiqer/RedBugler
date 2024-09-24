@@ -2,6 +2,8 @@ package io.github.wiqer.local.key;
 
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import io.github.wiqer.local.hash.HashAlgorithm;
+import net.agkn.hll.HLL;
+import net.agkn.hll.HLLType;
 
 public class KeyIntFragment {
 
@@ -12,7 +14,7 @@ public class KeyIntFragment {
 
     private final int[] keyHashFragment = new int[InternalPageSize];
 
-    HyperLogLog hyperLogLog = new HyperLogLog();
+    HLL myHyperLogLog = new HLL(16,5,-1, true, HLLType.EMPTY);
     private volatile long numberOfTimes  = 0;
     private volatile long lostNumberOfTimes  = 0;
 
@@ -24,7 +26,7 @@ public class KeyIntFragment {
     public void add(String key, String prefix){
         final int hash = hashAlgorithm.skipPrefixHash(key,prefix);
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
-        hyperLogLog.add(hash);
+       // myHyperLogLog.add(hash);
         int times = keyHashFragment[hashIndex];
         if(times == maxValue){
             lostNumberOfTimes++;
@@ -37,5 +39,6 @@ public class KeyIntFragment {
     public int get(String key, String prefix){
          return keyHashFragment[hashAlgorithm.skipPrefixHash(key,prefix,TableIndexSize)];
     }
+
 
 }

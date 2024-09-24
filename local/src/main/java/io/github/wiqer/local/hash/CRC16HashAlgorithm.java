@@ -68,11 +68,11 @@ public class CRC16HashAlgorithm implements HashAlgorithm {
 
     @Override
     public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return skipPrefixHash(key,prefix) >> 6 & tableHixSize;
+        return (skipPrefixHash(key,prefix) >> 6) & tableHixSize;
     }
 
     @Override
     public int getHashIndex(int hash, int tableHixSize) {
-        return hash >>  6 & tableHixSize;
+        return (hash >>  6) & tableHixSize;
     }
 }

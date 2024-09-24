@@ -40,11 +40,11 @@ public class Bit64HashAlgorithm implements HashAlgorithm {
 
     @Override
     public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return skipPrefixHash(key,prefix) >> 1 & tableHixSize;
+        return (skipPrefixHash(key,prefix) >> 1) & tableHixSize;
     }
 
     @Override
     public int getHashIndex(int hash, int tableHixSize) {
-        return hash >> 1 & tableHixSize;
+        return (hash >> 1) & tableHixSize;
     }
 }

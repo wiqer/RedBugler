@@ -11,7 +11,7 @@ public class KeyByteFragment {
 
     private final byte[] keyHashFragment = new byte[InternalPageSize];
 
-    HyperLogLog hyperLogLog = new HyperLogLog();
+    MyHyperLogLog myHyperLogLog = new MyHyperLogLog(1000);
     private long numberOfTimes  = 0;
     private int lostTimes  = 1;
 
@@ -23,7 +23,7 @@ public class KeyByteFragment {
     public void add(String key, String prefix){
         final int hash = hashAlgorithm.skipPrefixHash(key,prefix);
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
-        hyperLogLog.add(hash);
+        myHyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
         if(times == 127){
             lostTimes++;
@@ -40,7 +40,7 @@ public class KeyByteFragment {
     }
 
     public void clear() {
-        this.hyperLogLog.clear();
+        this.myHyperLogLog.clear();
         numberOfTimes = 0;
         lostTimes = 0;
     }

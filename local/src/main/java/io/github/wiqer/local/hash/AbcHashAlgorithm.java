@@ -35,12 +35,12 @@ public class AbcHashAlgorithm implements HashAlgorithm {
 
     @Override
     public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return skipPrefixHash(key,prefix) >> 4 & tableHixSize;
+        return (skipPrefixHash(key,prefix) >> 4) & tableHixSize;
     }
 
     @Override
     public int getHashIndex(int hash, int tableHixSize) {
-        return hash >> 4 & tableHixSize;
+        return (hash >> 4) & tableHixSize;
     }
 
     private int getHash(int hash, char value) {

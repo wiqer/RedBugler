@@ -41,11 +41,11 @@ public class RandomHashAlgorithm implements HashAlgorithm {
     }
     @Override
     public int getHashIndex(int hash, int tableHixSize) {
-        return hash >> 3 & tableHixSize;
+        return (hash >> 3) & tableHixSize;
     }
 
     @Override
     public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return skipPrefixHash(key,prefix) >> 3 & tableHixSize;
+        return (skipPrefixHash(key,prefix) >> 3) & tableHixSize;
     }
 }

@@ -39,11 +39,11 @@ public class Java71HashAlgorithm implements HashAlgorithm {
 
     @Override
     public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return skipPrefixHash(key,prefix) >> 5 & tableHixSize;
+        return (skipPrefixHash(key,prefix) >> 5) & tableHixSize;
     }
 
     @Override
     public int getHashIndex(int hash, int tableHixSize) {
-        return hash >> 5 & tableHixSize;
+        return (hash >> 5) & tableHixSize;
     }
 }
