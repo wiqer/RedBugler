@@ -1,14 +1,10 @@
 package io.github.wiqer.local.rule;
 
 import io.github.wiqer.local.hash.HashAlgorithm;
-import io.github.wiqer.local.hash.group.HashAlgorithmGroup;
 import io.github.wiqer.local.key.KeyByteFragment;
 
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 public class HotKeyRuleBucket {
 
@@ -16,9 +12,9 @@ public class HotKeyRuleBucket {
 
     private final long id;
 
-    private List<KeyByteFragment> keyByteFragmentList;
+    private KeyByteFragment[] keyByteFragmentArray;
 
-    private List<HashAlgorithm> hashAlgorithm ;
+    private HashAlgorithm[] hashAlgorithmArray ;
 
     private String prefix;
     /**
@@ -37,23 +33,22 @@ public class HotKeyRuleBucket {
      */
     private volatile int status = 0;
 
-    public HotKeyRuleBucket(List<HashAlgorithm> hashAlgorithm) {
+    public HotKeyRuleBucket(HashAlgorithm[] hashAlgorithmArray) {
         this.id = nextId.getAndIncrement();
-        this.hashAlgorithm = hashAlgorithm.stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());;
-        this.keyByteFragmentList = hashAlgorithm.stream().map(KeyByteFragment::new).collect(Collectors.toList());
+        this.hashAlgorithmArray = hashAlgorithmArray;;
+        keyByteFragmentArray = new KeyByteFragment[hashAlgorithmArray.length];
+        for (int i = 0; i < hashAlgorithmArray.length; i++) {
+            keyByteFragmentArray[i] = new KeyByteFragment(hashAlgorithmArray[i]);
+        }
     }
 
-    public HotKeyRuleBucket(HashAlgorithmGroup hashAlgorithmGroup, List<String> hashAlgorithmNameList, String prefix, ThreadPoolExecutor threadPoolExecutor, Integer queueSize) {
+    public HotKeyRuleBucket(HashAlgorithm[] hashAlgorithmArray, String prefix, ThreadPoolExecutor threadPoolExecutor, Integer queueSize) {
         this.id = nextId.getAndIncrement();
-        this.hashAlgorithm = hashAlgorithmNameList.stream()
-                .map(hashAlgorithmGroup::getByName)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-        this.keyByteFragmentList = hashAlgorithm.stream()
-                .map(KeyByteFragment::new)
-                .collect(Collectors.toList());
+        this.hashAlgorithmArray = hashAlgorithmArray;
+        keyByteFragmentArray = new KeyByteFragment[hashAlgorithmArray.length];
+        for (int i = 0; i < hashAlgorithmArray.length; i++) {
+            keyByteFragmentArray[i] = new KeyByteFragment(hashAlgorithmArray[i]);
+        }
         this.threadPoolExecutor = threadPoolExecutor;
         if (queueSize == null) {
             queueSize = 4096;
@@ -69,6 +64,10 @@ public class HotKeyRuleBucket {
 
     public long getId() {
         return id;
+    }
+
+    public int getStatus() {
+        return status;
     }
 
     @Deprecated
@@ -93,7 +92,7 @@ public class HotKeyRuleBucket {
     }
 
     public boolean getAndSet(int hash, HashAlgorithm hashAlgorithm){
-        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
+        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
             if(keyByteFragment.getHashAlgorithm(hashAlgorithm)){
                 keyByteFragment.add(hash);
                 return true;
@@ -102,13 +101,35 @@ public class HotKeyRuleBucket {
         return false;
     }
 
+    public boolean add(int hash, int hashAlgorithmIndex){
+        KeyByteFragment keyByteFragment =  keyByteFragmentArray[hashAlgorithmIndex];
+        keyByteFragment.add(hash);
+        return true;
+    }
     public int get(int hash, HashAlgorithm hashAlgorithm){
-        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
+        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
             if(keyByteFragment.getHashAlgorithm(hashAlgorithm)){
                 return keyByteFragment.get(hash);
             }
         }
         return 0;
+    }
+
+
+    public int getByAlgorithmIndex(int hash, int hashAlgorithmIndex){
+        return keyByteFragmentArray[hashAlgorithmIndex].get(hash);
+    }
+
+    public int getKeySumByAlgorithmIndex(int hashAlgorithmIndex){
+        return keyByteFragmentArray[hashAlgorithmIndex].keySum();
+    }
+
+    public long getNumberOfTimesByAlgorithmIndex(int hashAlgorithmIndex){
+        return keyByteFragmentArray[hashAlgorithmIndex].getNumberOfTimes();
+    }
+
+    public int getTimesSumByAlgorithmIndex(int hash, int hashAlgorithmIndex){
+        return keyByteFragmentArray[hashAlgorithmIndex].get(hash);
     }
 
     private void concurrentRun(){
@@ -131,7 +152,7 @@ public class HotKeyRuleBucket {
         }
         key = multithreadedCacheBackUp.poll();
         while (key != null){
-            for (KeyByteFragment kbf : keyByteFragmentList){
+            for (KeyByteFragment kbf : keyByteFragmentArray){
                 kbf.add(key, prefix);
             }
             key = multithreadedCacheBackUp.poll();
@@ -146,39 +167,51 @@ public class HotKeyRuleBucket {
         }
     }
 
-    public void clear() {
+    /**
+     * 异步删除
+     */
+    public void clear(int era) {
         /**
          * 没有任务清理，发起任务清理
          */
+
         if((status & 0b110) == 0){
             synchronized (this){
                 if((status & 0b110) == 0){
                     status = status|0b110;
-                    threadPoolExecutor.execute(this::clearRun);
+                    threadPoolExecutor.execute(this.clearRun(era));
                 }
             }
         }
     }
 
 
-    public void clearRun() {
+    public Runnable clearRun(int era) {
         if((status & 0b110) == 0){
             synchronized (this){
                 if((status & 0b110) != 0){
-                    return;
+                    return null;
                 }
                 status = status|0b110;
             }
         }
-        for (KeyByteFragment keyByteFragment : keyByteFragmentList){
-            keyByteFragment.clear();
+        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
+            keyByteFragment.swapAndClear(era);
         }
-        if((status & 1) == 1){
+        if((status & 0b110) == 0b110){
             synchronized (this){
-                if((status & 1) == 1){
+                if((status & 0b110) == 0b110){
                     status = status & 0xFF9;
                 }
             }
         }
+        return null;
     }
+
+    public void synchronousClear(int era){
+        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
+            keyByteFragment.swapAndClear(era);
+        }
+    }
+
 }

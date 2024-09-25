@@ -3,6 +3,8 @@ package io.github.wiqer.local.key;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import io.github.wiqer.local.hash.HashAlgorithm;
 
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class KeyByteFragment {
@@ -11,12 +13,26 @@ public class KeyByteFragment {
     static final int TableIndexSize = InternalPageSize - 1;
     private final HashAlgorithm hashAlgorithm;
 
-    private final byte[] keyHashFragment = new byte[InternalPageSize];
+    private byte[] keyHashFragment = new byte[InternalPageSize];
+
+    private byte[] keyHashFragmentBackUp = new byte[InternalPageSize];
+
     private final ReentrantLock[] keyHashFragmentLock = new ReentrantLock[InternalPageSize >> 8];
 
-    MyHyperLogLog myHyperLogLog = new MyHyperLogLog(1000);
+    private final ReentrantLock clearResultLock = new ReentrantLock();
+
+    private MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
+    private MyHyperLogLog hyperLogLogBackUp = new MyHyperLogLog(1000);
+
+    private volatile int keySum = -1;
     private long numberOfTimes  = 0;
     private int lostTimes  = 1;
+    /**
+     *
+     */
+    private volatile long era = 0;
+
+    volatile boolean isAvailable = true;
 
     public KeyByteFragment(HashAlgorithm hashAlgorithm) {
         this.hashAlgorithm = hashAlgorithm;
@@ -29,17 +45,22 @@ public class KeyByteFragment {
         return hashAlgorithm.skipPrefixHash(key, prefix);
     }
 
+    /**
+     * 为无锁设计使用的
+     * @param key
+     * @param prefix
+     */
     public void add(String key, String prefix){
         final int hash = hashAlgorithm.skipPrefixHash(key,prefix);
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
-        myHyperLogLog.add(hash);
+        hyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
         reBaseTable(hashIndex, times);
     }
 
     public void add(int hash){
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
-        myHyperLogLog.add(hash);
+        hyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
         ReentrantLock lock = keyHashFragmentLock[hashIndex>>8];
         lock.lock();
@@ -48,13 +69,25 @@ public class KeyByteFragment {
         }finally {
             lock.unlock();
         }
+    }
 
+    public int keySum(){
+        if(keySum != -1) return keySum;
+        keySum = hyperLogLog.size();
+        return keySum;
+    }
+
+    public long getNumberOfTimes() {
+        return numberOfTimes;
     }
 
     private void reBaseTable(int hashIndex, byte times) {
         if(times == 127){
             lostTimes++;
             for (int i = 0; i < keyHashFragment.length; i++){
+                if(keyHashFragment[i] == 0){
+                    continue;
+                }
                 keyHashFragment[i] = (byte) (keyHashFragment[i]  >> 1);
             }
         }
@@ -71,13 +104,90 @@ public class KeyByteFragment {
         return keyHashFragment[hashAlgorithm.getHashIndex(hash,TableIndexSize)] * lostTimes;
     }
 
-    public void clear() {
-        this.myHyperLogLog.clear();
-        numberOfTimes = 0;
-        lostTimes = 0;
+    /**
+     * 同步删除
+     *
+     */
+    public void swapAndClear(int era) {
+        if(keySum == -1){
+            return;
+        }
+
+        boolean flag = false;
+        if(clearResultLock.isLocked()){
+            return;
+        }
+        try{
+            flag = clearResultLock.tryLock(1, TimeUnit.MILLISECONDS);
+            if (!flag){
+                return;
+            }
+            if(!isAvailable){
+                return;
+            }
+
+            isAvailable = false;
+            keySum = -1;
+            if(era > this.era){
+                this.era = era;
+
+                byte[] keyHashFragmentTemp = keyHashFragment;
+                keyHashFragment = keyHashFragmentBackUp;
+                keyHashFragmentBackUp = keyHashFragmentTemp;
+                MyHyperLogLog hyperLogLogTemp = hyperLogLog.reGetMyHyperLogLog(hyperLogLog.size());
+                hyperLogLog = hyperLogLogBackUp;
+                hyperLogLogBackUp = hyperLogLogTemp;
+                if(hyperLogLogBackUp.size() != 0){
+                    hyperLogLogBackUp.clear();
+                    Arrays.fill(keyHashFragmentBackUp, (byte) 0);
+                }
+            }else {
+                return;
+            }
+
+            this.hyperLogLog.clear();
+            numberOfTimes = 0;
+            lostTimes = 0;
+            keySum = -1;
+            isAvailable = true;
+
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally{
+            if (flag){
+                clearResultLock.unlock();
+            }
+        }
     }
 
     public boolean getHashAlgorithm(HashAlgorithm ha) {
         return ha.equals(hashAlgorithm);
+    }
+
+    /**
+     * 异步线程清理
+     */
+    public void clearBackUp(){
+        boolean flag = false;
+        if(clearResultLock.isLocked()){
+            return;
+        }
+        try{
+            flag = clearResultLock.tryLock(1, TimeUnit.MILLISECONDS);
+            if (flag){
+                if(isAvailable){
+                    if(hyperLogLogBackUp.size() != 0){
+                        hyperLogLogBackUp.clear();
+                        Arrays.fill(keyHashFragmentBackUp, (byte) 0);
+                    }
+                }
+            }
+        }catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally{
+            if (flag){
+                clearResultLock.unlock();
+            }
+        }
     }
 }

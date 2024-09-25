@@ -9,16 +9,23 @@ import java.util.stream.Collectors;
 
 public class HotKeyRuleSegmentation {
 
+    private final byte bucketSize = 8;
+
+    private final byte bucketSizeBitSum = (byte) getIntBitsNumber(8);
+
+
     /**
      * 分时存储
      */
-    private HotKeyRuleBucket[] hotKeyRuleBuckets = new HotKeyRuleBucket[8];
+    private final HotKeyRuleBucket[] hotKeyRuleBuckets = new HotKeyRuleBucket[bucketSize];
 
-    private int bucketIndexSize = 0x7;
+    private HashAlgorithm[] hashAlgorithmArray ;
 
     private List<HashAlgorithm> hashAlgorithmList ;
 
     private String prefix;
+
+    private Long startTime = System.currentTimeMillis();
     /**
      * 有效的扫描时间
      * 0=>10ms
@@ -36,35 +43,74 @@ public class HotKeyRuleSegmentation {
                 .map(hashAlgorithmGroup::getByName)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        hashAlgorithmArray = new HashAlgorithm[hashAlgorithmList.size()];
+        hashAlgorithmList.toArray(hashAlgorithmArray);
         for (int i = 0; i < hotKeyRuleBuckets.length; i++) {
-            hotKeyRuleBuckets[i] = new HotKeyRuleBucket(hashAlgorithmList);
+            hotKeyRuleBuckets[i] = new HotKeyRuleBucket(hashAlgorithmArray);
         }
         this.prefix = prefix;
         this.timeLevel = timeLevel;
     }
 
-    public void add(String key){
+    public boolean add(String key){
+        byte bucketIndexSize = bucketSize - 1;
+        int era = ((int) (((getTime() - startTime)&Integer.MAX_VALUE))>> (timeLevel + bucketSizeBitSum));
         int index = (int) (getTime()) >> timeLevel & bucketIndexSize;
         int nextIndex = (index + 1) & bucketIndexSize;
         HotKeyRuleBucket hotKeyRuleBucket = hotKeyRuleBuckets[index];
-        for (HashAlgorithm hashAlgorithm: hashAlgorithmList){
+        int isHotFragmentTimes = 0;
+        for (int i = 0; i < hashAlgorithmArray.length; i++){
+            HashAlgorithm hashAlgorithm = hashAlgorithmArray[i];
             int hash = hashAlgorithm.skipPrefixHash(key, prefix);
+
             for (int k = 0; k < bucketIndexSize; k++){
                 HotKeyRuleBucket conurrenHotKeyRuleBucket = hotKeyRuleBuckets[k];
                 if(index == k){
-                    conurrenHotKeyRuleBucket.getAndSet(hash,hashAlgorithm);
+                    conurrenHotKeyRuleBucket.add(hash,i);
                 }else if(nextIndex == k){
-                    conurrenHotKeyRuleBucket.clear();
+                    conurrenHotKeyRuleBucket.synchronousClear(era);
                 }else {
-                   int hashTimes = conurrenHotKeyRuleBucket.get(hash,hashAlgorithm);
+                    if(conurrenHotKeyRuleBucket.getStatus() != 0){
+                        continue;
+                    }
+                    int hashTimes = conurrenHotKeyRuleBucket.getByAlgorithmIndex(hash,i);
+                    int keySum = conurrenHotKeyRuleBucket.getKeySumByAlgorithmIndex(i);
+                    long numberOfTimes = conurrenHotKeyRuleBucket.getNumberOfTimesByAlgorithmIndex(i);
+                    if(conurrenHotKeyRuleBucket.getStatus() != 0){
+                        continue;
+                    }
+                    /**
+                     * todo 根据有基尼系数汇算是否分片热
+                     */
+                    if(hashTimes > numberOfTimes / keySum){
+                        isHotFragmentTimes++;
+                    }
                 }
             }
         }
+        /**
+         * 汇算是否分片过半都是热键
+         */
+        if(isHotFragmentTimes > (hashAlgorithmArray.length << (bucketSize>>1))){
+            return true;
+        }
+        return false;
 
     }
 
     private long getTime(){
         return System.currentTimeMillis();
     }
+
+    private static int getIntBitsNumber(int number) {
+        int bitsnumber = 0;
+        number = number & Integer.MAX_VALUE;
+        while (number > 0){
+            bitsnumber++;
+            number = number >> 1;
+        }
+        return bitsnumber;
+    }
+
 
 }
