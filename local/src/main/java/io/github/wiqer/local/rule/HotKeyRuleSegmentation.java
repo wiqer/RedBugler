@@ -66,9 +66,9 @@ public class HotKeyRuleSegmentation {
             for (int k = 0; k < bucketIndexSize; k++){
                 HotKeyRuleBucket conurrenHotKeyRuleBucket = hotKeyRuleBuckets[k];
                 if(index == k){
-                    conurrenHotKeyRuleBucket.add(hash,i);
+                    conurrenHotKeyRuleBucket.add(hash,i, era);
                 }else if(nextIndex == k){
-                    conurrenHotKeyRuleBucket.synchronousClear(era);
+                    conurrenHotKeyRuleBucket.synchronousClear(nextIndex > index ? era : era + 1);
                 }else {
                     if(conurrenHotKeyRuleBucket.getStatus() != 0){
                         continue;

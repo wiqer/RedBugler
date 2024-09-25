@@ -91,19 +91,20 @@ public class HotKeyRuleBucket {
         else return false;
     }
 
-    public boolean getAndSet(int hash, HashAlgorithm hashAlgorithm){
+    public boolean getAndSet(int hash, HashAlgorithm hashAlgorithm, long era){
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
             if(keyByteFragment.getHashAlgorithm(hashAlgorithm)){
-                keyByteFragment.add(hash);
+                keyByteFragment.add(hash, era);
                 return true;
             }
         }
         return false;
     }
 
-    public boolean add(int hash, int hashAlgorithmIndex){
+
+    public boolean add(int hash, int hashAlgorithmIndex, long era){
         KeyByteFragment keyByteFragment =  keyByteFragmentArray[hashAlgorithmIndex];
-        keyByteFragment.add(hash);
+        keyByteFragment.add(hash, era);
         return true;
     }
     public int get(int hash, HashAlgorithm hashAlgorithm){

@@ -58,7 +58,15 @@ public class KeyByteFragment {
         reBaseTable(hashIndex, times);
     }
 
-    public void add(int hash){
+    /**
+     * double check 进行读代级检查，不可读清除数据
+     * @param hash
+     * @return
+     */
+    public void add(int hash, long era){
+        if(era != swapAndClear(era)){
+            return;
+        }
         final int hashIndex = hashAlgorithm.getHashIndex(hash, TableIndexSize);
         hyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
@@ -108,22 +116,22 @@ public class KeyByteFragment {
      * 同步删除
      *
      */
-    public void swapAndClear(int era) {
-        if(keySum == -1){
-            return;
+    public long swapAndClear(long era) {
+        if(this.era == era){
+            return era;
         }
 
         boolean flag = false;
         if(clearResultLock.isLocked()){
-            return;
+            return this.era;
         }
         try{
             flag = clearResultLock.tryLock(1, TimeUnit.MILLISECONDS);
             if (!flag){
-                return;
+                return this.era;
             }
             if(!isAvailable){
-                return;
+                return this.era;
             }
 
             isAvailable = false;
@@ -141,8 +149,6 @@ public class KeyByteFragment {
                     hyperLogLogBackUp.clear();
                     Arrays.fill(keyHashFragmentBackUp, (byte) 0);
                 }
-            }else {
-                return;
             }
 
             this.hyperLogLog.clear();
@@ -158,6 +164,7 @@ public class KeyByteFragment {
                 clearResultLock.unlock();
             }
         }
+        return this.era;
     }
 
     public boolean getHashAlgorithm(HashAlgorithm ha) {
