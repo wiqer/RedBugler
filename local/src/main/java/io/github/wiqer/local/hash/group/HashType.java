@@ -1,13 +1,12 @@
 package io.github.wiqer.local.hash.group;
 
-
-import io.github.wiqer.local.hash.HashAlgorithm;
 import io.github.wiqer.local.hash.*;
 import lombok.Getter;
 
 
-import java.util.function.Supplier;
-
+/**
+ * 自带的hash算法
+ */
 @Getter
 public enum HashType {
     JH8(new JavaHashStringNAlgorithm(8)),JH9(new JavaHashStringNAlgorithm(9)),JH1(new JavaHashStringOneAlgorithm()),JH2(new JavaHashStringTwoAlgorithm()),

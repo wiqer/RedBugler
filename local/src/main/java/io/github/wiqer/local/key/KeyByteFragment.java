@@ -47,7 +47,7 @@ public class KeyByteFragment {
         }
         allTimes++;
         keyHashFragment[hashIndex]++;
-        int sum = get(hash);
+        int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
         return sum > allTimes / groupCount;
     }
@@ -71,7 +71,7 @@ public class KeyByteFragment {
 
     }
 
-    public int get(int hash){
+    public int getSum(int hash){
         return keyHashFragment[hash & TABLE_MAX_INDEX] * lostTimes;
     }
 

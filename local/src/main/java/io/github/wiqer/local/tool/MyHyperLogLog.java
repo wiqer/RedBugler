@@ -18,13 +18,6 @@ public class MyHyperLogLog {
 
     }
 
-    public MyHyperLogLog reGetMyHyperLogLog(long nubSize){
-        if(Math.max((getIntBitsNumber(nubSize) >>2) - 1 , 4) != log2m){
-            return new MyHyperLogLog((int) nubSize);
-        }
-        return this;
-    }
-
     public void add(int value){
         writeTime = SystemClock.now();
         hyperLogLog.addRaw(value);

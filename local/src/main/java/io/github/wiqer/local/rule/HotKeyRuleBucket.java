@@ -2,17 +2,21 @@ package io.github.wiqer.local.rule;
 
 import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.key.KeyByteFragment;
+import lombok.Getter;
 
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class HotKeyRuleBucket {
 
     private static final AtomicLong nextId = new AtomicLong(0);
 
+    @Getter
     private final long id;
 
-    private final KeyByteFragment[] keyByteFragmentArray;
+    private final List<KeyByteFragment> keyByteFragmentArray;
 
     /**
      * 先存主存储，满了存储到multithreadedCacheBackUp，并通知消费线程去消费
@@ -24,24 +28,13 @@ public class HotKeyRuleBucket {
     /**
      * | **** |0 可用| 0 已删除完成 ，1 正在删除|当前活动时期的运行 add状态，0 未运行，1，正在运行|
      */
+    @Getter
     private volatile int status = 0;
 
 
-    public HotKeyRuleBucket(HashStringAlgorithm[] hashStringAlgorithmArray, String prefix, ThreadPoolExecutor threadPoolExecutor, Integer queueSize) {
+    public HotKeyRuleBucket(List<HashStringAlgorithm> hashStringAlgorithmList) {
         this.id = nextId.getAndIncrement();
-        keyByteFragmentArray = new KeyByteFragment[hashStringAlgorithmArray.length];
-        for (int i = 0; i < hashStringAlgorithmArray.length; i++) {
-            keyByteFragmentArray[i] = new KeyByteFragment(hashStringAlgorithmArray[i]);
-        }
-    }
-
-
-    public long getId() {
-        return id;
-    }
-
-    public int getStatus() {
-        return status;
+        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(KeyByteFragment::new).collect(Collectors.toList());
     }
 
 
