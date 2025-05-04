@@ -2,6 +2,7 @@ package io.github.wiqer.local.key;
 
 import io.github.wiqer.local.hash.group.HashFactory;
 import io.github.wiqer.local.rule.HotKeyRuleBucket;
+import lombok.extern.slf4j.Slf4j;
 import net.agkn.hll.HLL;
 import net.agkn.hll.HLLType;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
@@ -14,6 +15,7 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+@Slf4j
 public class HotKeyRuleBucketTest {
     @Test
     public void hotKeyRuleBucket( ) throws FileNotFoundException {
@@ -63,9 +65,9 @@ public class HotKeyRuleBucketTest {
 
         }
         long end = System.currentTimeMillis();
-        System.out.println("keyList: " + keyList.size());
-        System.out.println("hotKeySet: " + hotKeySet.size());
-        System.out.println("一百万此检测耗时: " + (end - start) + "ms");
+        log.info("keyList: " + keyList.size());
+        log.info("hotKeySet: " + hotKeySet.size());
+        log.info("一百万此检测耗时: " + (end - start) + "ms");
     }
 
     // 加权随机选择
