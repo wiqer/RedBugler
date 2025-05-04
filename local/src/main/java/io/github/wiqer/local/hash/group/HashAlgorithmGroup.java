@@ -11,4 +11,6 @@ public interface HashAlgorithmGroup {
     HashStringAlgorithm put(String name, HashStringAlgorithm defaultAlgorithm);
 
     List<HashStringAlgorithm> getAllAlgorithms();
+
+    List<HashStringAlgorithm> getAllFastAlgorithms();
 }

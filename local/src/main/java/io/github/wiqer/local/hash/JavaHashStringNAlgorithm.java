@@ -25,4 +25,9 @@ public class JavaHashStringNAlgorithm implements HashStringAlgorithm {
         return getHash(key);
     }
 
+    @Override
+    public Boolean isFast(){
+        return true;
+    }
+
 }

@@ -18,4 +18,8 @@ public class JavaHashStringTwoAlgorithm implements HashStringAlgorithm {
         return (h ) ^ (h >>> 16);
     }
 
+    @Override
+    public Boolean isFast(){
+        return true;
+    }
 }

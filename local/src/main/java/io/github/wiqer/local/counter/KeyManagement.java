@@ -68,7 +68,7 @@ public class KeyManagement {
     private final HotKeyWorker writeThread;
 
     public KeyManagement(int windowSize, int timeSlice, TimeUnit timeUnit) {
-        this(new HashFactory().getAllAlgorithms(), windowSize, timeSlice, timeUnit, DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()), Integer.MAX_VALUE >>> 4), null);
+        this(new HashFactory().getAllFastAlgorithms(), windowSize, timeSlice, timeUnit, DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()), Integer.MAX_VALUE >>> 4), null);
     }
 
     /**

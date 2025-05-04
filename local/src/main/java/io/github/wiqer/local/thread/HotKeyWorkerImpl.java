@@ -4,8 +4,6 @@ package io.github.wiqer.local.thread;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.util.Queue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 

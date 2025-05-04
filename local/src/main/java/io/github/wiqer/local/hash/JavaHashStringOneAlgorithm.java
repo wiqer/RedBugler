@@ -17,5 +17,7 @@ public class JavaHashStringOneAlgorithm implements HashStringAlgorithm {
         h = (h >>> 1) | (h << (31)) ;
         return (h ) ^ (h >>> 16);
     }
-
+    public Boolean isFast(){
+        return true;
+    }
 }

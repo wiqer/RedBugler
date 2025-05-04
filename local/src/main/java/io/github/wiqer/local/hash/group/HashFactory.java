@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class HashFactory implements HashAlgorithmGroup {
@@ -33,5 +34,9 @@ public class HashFactory implements HashAlgorithmGroup {
         return new ArrayList<>(map.values());
     }
 
+    @Override
+    public List<HashStringAlgorithm> getAllFastAlgorithms() {
+        return map.values().stream().filter(HashStringAlgorithm::isFast).collect(Collectors.toList());
+    }
 
 }

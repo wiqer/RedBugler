@@ -16,4 +16,8 @@ public class JavaHashString6Algorithm implements HashStringAlgorithm {
         return getHash(key);
     }
 
+    @Override
+    public Boolean isFast(){
+        return true;
+    }
 }

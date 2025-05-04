@@ -10,13 +10,17 @@ public interface HashStringAlgorithm extends HashAlgorithm<String> {
      * @param key
      * @return
      */
-    public Integer getHash(Object key);
+    Integer getHash(Object key);
 
     /**
      * 生产特征值
      * @param key
      * @return
      */
-    public Integer hash(String key);
+    Integer hash(String key);
+
+    default Boolean isFast(){
+        return false;
+    }
 
 }

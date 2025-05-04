@@ -14,4 +14,8 @@ public class JavaHashStringAlgorithm implements HashStringAlgorithm {
         return key.hashCode();
     }
 
+    @Override
+    public Boolean isFast(){
+        return true;
+    }
 }

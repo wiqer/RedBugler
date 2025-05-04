@@ -16,4 +16,8 @@ public class JavaHashString7Algorithm implements HashStringAlgorithm {
         return getHash(key);
     }
 
+    @Override
+    public Boolean isFast(){
+        return true;
+    }
 }
