@@ -16,7 +16,7 @@ public class HotKeyWorkerImpl extends FastThread implements HotKeyWorker {
     /**
      * 这个搞太多似乎也没啥意义
      */
-    static final int MAXIMUM_CAPACITY = Integer.MAX_VALUE;
+    static final int MAXIMUM_CAPACITY = Integer.MAX_VALUE >>> 4;
 
     private static final int IDLE = -1;
     private static final int WORK = 1;
