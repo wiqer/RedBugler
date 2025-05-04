@@ -17,13 +17,9 @@ public class KeyByteFragment {
 
     private byte[] keyHashFragment = new byte[InternalPageSize];
 
-    private byte[] keyHashFragmentBackUp = new byte[InternalPageSize];
-
-
     private MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
-    private MyHyperLogLog hyperLogLogBackUp = new MyHyperLogLog(1000);
 
-    private long numberOfTimes  = 0;
+    private long allTimes  = 0;
     private int lostTimes  = 1;
     /**
      *
@@ -49,11 +45,11 @@ public class KeyByteFragment {
         if(times == 127){
             reBaseTable();
         }
-        numberOfTimes++;
+        allTimes++;
         keyHashFragment[hashIndex]++;
         int sum = get(hash);
         long groupCount = hyperLogLog.size();
-        return sum > numberOfTimes / groupCount;
+        return sum > allTimes / groupCount;
     }
 
     public long keySum(){
@@ -61,7 +57,7 @@ public class KeyByteFragment {
     }
 
     public long getNumberOfTimes() {
-        return numberOfTimes;
+        return allTimes;
     }
 
     private void reBaseTable() {
@@ -83,40 +79,10 @@ public class KeyByteFragment {
      * 同步删除
      *
      */
-    public long swapAndClear(long era) {
-        if(this.era == era){
-            return era;
-        }
-
-        boolean flag = false;
-        if (!flag){
-            return this.era;
-        }
-        if(!isAvailable){
-            return this.era;
-        }
-
-        isAvailable = false;
-        if(era > this.era){
-            this.era = era;
-
-            byte[] keyHashFragmentTemp = keyHashFragment;
-            keyHashFragment = keyHashFragmentBackUp;
-            keyHashFragmentBackUp = keyHashFragmentTemp;
-            MyHyperLogLog hyperLogLogTemp = hyperLogLog.reGetMyHyperLogLog(hyperLogLog.size());
-            hyperLogLog = hyperLogLogBackUp;
-            hyperLogLogBackUp = hyperLogLogTemp;
-            if(hyperLogLogBackUp.size() != 0){
-                hyperLogLogBackUp.clear();
-                Arrays.fill(keyHashFragmentBackUp, (byte) 0);
-            }
-        }
-
+    public void clear() {
+        Arrays.fill(keyHashFragment, (byte) 0);
         this.hyperLogLog.clear();
-        numberOfTimes = 0;
-        lostTimes = 0;
-        isAvailable = true;
-        return this.era;
+
     }
 
     public boolean getHashAlgorithm(HashStringAlgorithm ha) {

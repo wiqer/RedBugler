@@ -26,13 +26,6 @@ public class HotKeyRuleBucket {
      */
     private volatile int status = 0;
 
-    public HotKeyRuleBucket(HashStringAlgorithm[] hashStringAlgorithmArray) {
-        this.id = nextId.getAndIncrement();
-        keyByteFragmentArray = new KeyByteFragment[hashStringAlgorithmArray.length];
-        for (int i = 0; i < hashStringAlgorithmArray.length; i++) {
-            keyByteFragmentArray[i] = new KeyByteFragment(hashStringAlgorithmArray[i]);
-        }
-    }
 
     public HotKeyRuleBucket(HashStringAlgorithm[] hashStringAlgorithmArray, String prefix, ThreadPoolExecutor threadPoolExecutor, Integer queueSize) {
         this.id = nextId.getAndIncrement();
@@ -41,9 +34,7 @@ public class HotKeyRuleBucket {
             keyByteFragmentArray[i] = new KeyByteFragment(hashStringAlgorithmArray[i]);
         }
     }
-    public HotKeyRuleBucket() {
-        this.id = nextId.getAndIncrement();
-    }
+
 
     public long getId() {
         return id;
@@ -63,9 +54,9 @@ public class HotKeyRuleBucket {
     }
 
 
-    public void clear(int era){
+    public void clear(){
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
-            keyByteFragment.swapAndClear(era);
+            keyByteFragment.clear();
         }
     }
 
