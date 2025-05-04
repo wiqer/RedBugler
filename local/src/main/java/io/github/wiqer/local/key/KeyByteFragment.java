@@ -52,6 +52,18 @@ public class KeyByteFragment {
         return sum > allTimes / groupCount;
     }
 
+    /**
+     * double check 进行读代级检查，不可读清除数据
+     * @param key
+     * @return
+     */
+    public boolean get(Object key){
+        final int hash = hashStringAlgorithm.getHash(key);
+        int sum = getSum(hash);
+        long groupCount = hyperLogLog.size();
+        return sum > allTimes / groupCount;
+    }
+
     public long keySum(){
         return hyperLogLog.size();
     }

@@ -46,6 +46,14 @@ public class HotKeyRuleBucket {
         return result;
     }
 
+    public boolean get(Object key){
+        boolean result = true;
+        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
+            result &= keyByteFragment.get(key);
+        }
+        return result;
+    }
+
 
     public  synchronized void clear(){
         if(status == 0){

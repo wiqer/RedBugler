@@ -155,12 +155,11 @@ public class KeyManagement {
         //譬如1秒分4个窗口，那么数组共计8个窗口
         //当前index为5时，就清空6、7、8、1。然后把2、3、4、5的加起来就是该窗口内的总和
         clearFromIndex(index);
-        int sum = 0;
+        int sum = timeSlices[index].getAndSet(key) ? 1 : 0;
         //加上前面几个时间片
         for (int i = 1; i < windowSize; i++) {
-            sum += timeSlices[index].getAndSet(key) ? 1 : 0;
+            sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key) ? 1 : 0;
         }
-
         lastAddTimestamp = SystemClock.now();
 
         return sum >= threshold;
