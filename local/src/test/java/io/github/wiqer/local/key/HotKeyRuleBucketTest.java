@@ -18,10 +18,10 @@ import java.util.Set;
 @Slf4j
 public class HotKeyRuleBucketTest {
     @Test
-    public void hotKeyRuleBucket( ) throws FileNotFoundException {
+    public void hotKeyRuleBucket( ) {
          hotKeyRuleBucket(16,6);
     }
-    public void hotKeyRuleBucket(int sizeBit,int rateBit) throws FileNotFoundException {
+    public void hotKeyRuleBucket(int sizeBit,int rateBit) {
         if(sizeBit > 31 || sizeBit < 0){
             sizeBit = 6;
         }

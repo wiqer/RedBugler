@@ -26,7 +26,7 @@ public class HotKeyRuleBucket {
     private volatile long runThreadId;
 
     /**
-     * | **** |0 可用| 0 已删除完成 ，1 正在删除|当前活动时期的运行 add状态，0 未运行，1，正在运行|
+     * | **** |0 可用| 2 已删除完成| 1 正在删除|当前活动时期的运行 add状态，0 未运行，1，正在运行|
      */
     @Getter
     private volatile int status = 0;
@@ -47,10 +47,15 @@ public class HotKeyRuleBucket {
     }
 
 
-    public void clear(){
-        for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
-            keyByteFragment.clear();
+    public  synchronized void clear(){
+        if(status == 0){
+            status = 1;
+            for (KeyByteFragment keyByteFragment : keyByteFragmentArray){
+                keyByteFragment.clear();
+            }
+            status = 2;
         }
+
     }
 
 }

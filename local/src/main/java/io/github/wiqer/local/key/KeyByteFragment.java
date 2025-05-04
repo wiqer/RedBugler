@@ -79,10 +79,12 @@ public class KeyByteFragment {
      * 同步删除
      *
      */
-    public void clear() {
-        Arrays.fill(keyHashFragment, (byte) 0);
-        this.hyperLogLog.clear();
-
+    public synchronized void clear() {
+        if(isAvailable){
+            Arrays.fill(keyHashFragment, (byte) 0);
+            this.hyperLogLog.clear();
+            isAvailable = false;
+        }
     }
 
     public boolean getHashAlgorithm(HashStringAlgorithm ha) {
