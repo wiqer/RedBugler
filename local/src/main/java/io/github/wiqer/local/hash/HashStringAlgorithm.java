@@ -3,7 +3,7 @@ package io.github.wiqer.local.hash;
 /**
  * @author MultipleHashHotkeyCache 中对key取特征值的hash算法
  */
-public interface HashAlgorithm<T> {
+public interface HashStringAlgorithm extends HashAlgorithm<String> {
 
     /**
      * 生产特征值
@@ -17,6 +17,6 @@ public interface HashAlgorithm<T> {
      * @param key
      * @return
      */
-    public Integer hash(T key);
+    public Integer hash(String key);
 
 }

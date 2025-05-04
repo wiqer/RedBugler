@@ -1,9 +1,9 @@
 package io.github.wiqer.local.hash.group;
 
-import io.github.wiqer.local.hash.HashAlgorithm;
+import io.github.wiqer.local.hash.HashStringAlgorithm;
 
 public interface HashAlgorithmGroup {
 
-    HashAlgorithm getByName(String name);
+    HashStringAlgorithm getByName(String name);
 
 }

@@ -1,6 +1,6 @@
 package io.github.wiqer.local.hash;
 
-public class CRC16HashAlgorithm implements HashAlgorithm {
+public class CRC16HashStringAlgorithm implements HashStringAlgorithm {
 
     private final static int[] table = new int[]{
             0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
@@ -50,29 +50,5 @@ public class CRC16HashAlgorithm implements HashAlgorithm {
         return crc & 0xffff;
     }
 
-    @Override
-    public Integer skipPrefixHash(String key, String prefix) {
-        int keyLen = key.length();
-        int prefixLen = prefix.length();
-        if(keyLen < prefix.length()){
-            return 0;
-        }
-        int crc = 0x0000;
-        byte[] bytes = key.getBytes();
-        for (int i = prefixLen -1 ; i < keyLen; i++) {
-            byte b = bytes[i];
-            crc = (crc << 8) ^ table[((crc >>> 8) ^ (b & 0xff)) & 0xff];
-        }
-        return crc & 0xffff;
-    }
 
-    @Override
-    public int skipPrefixHash(String key, String prefix, int tableHixSize) {
-        return (skipPrefixHash(key,prefix) >> 6) & tableHixSize;
-    }
-
-    @Override
-    public int getHashIndex(int hash, int tableHixSize) {
-        return (hash >>  6) & tableHixSize;
-    }
 }

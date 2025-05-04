@@ -4,22 +4,22 @@ import io.github.wiqer.local.hash.*;
 
 public class DefaultHashAlgorithmGroup implements HashAlgorithmGroup {
 
-    AbcHashAlgorithm abcHashAlgorithm = new AbcHashAlgorithm();
+    AbcHashStringAlgorithm abcHashAlgorithm = new AbcHashStringAlgorithm();
 
-    CRC16HashAlgorithm crc16HashAlgorithm = new CRC16HashAlgorithm();
+    CRC16HashStringAlgorithm crc16HashAlgorithm = new CRC16HashStringAlgorithm();
 
-    JavaHashAlgorithm javaHashAlgorithm = new JavaHashAlgorithm();
+    JavaHashStringAlgorithm javaHashAlgorithm = new JavaHashStringAlgorithm();
 
-    Bit64HashAlgorithm bit64HashAlgorithm = new Bit64HashAlgorithm();
+    Bit64HashStringAlgorithm bit64HashAlgorithm = new Bit64HashStringAlgorithm();
 
-    Java71HashAlgorithm java71HashAlgorithm = new Java71HashAlgorithm();
+    Java71HashStringAlgorithm java71HashAlgorithm = new Java71HashStringAlgorithm();
 
-    RandomHashAlgorithm randomHashAlgorithm = new RandomHashAlgorithm();
+    RandomHashStringAlgorithm randomHashAlgorithm = new RandomHashStringAlgorithm();
 
-    SimpleHashAlgorithm simpleHashAlgorithm = new SimpleHashAlgorithm();
+    SimpleHashStringAlgorithm simpleHashAlgorithm = new SimpleHashStringAlgorithm();
 
     @Override
-    public HashAlgorithm getByName(String name){
+    public HashStringAlgorithm getByName(String name){
         if("abc".equalsIgnoreCase(name)){
             return abcHashAlgorithm;
         }
