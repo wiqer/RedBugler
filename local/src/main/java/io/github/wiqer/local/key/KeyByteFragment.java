@@ -15,9 +15,9 @@ public class KeyByteFragment {
     static final int TABLE_MAX_INDEX = InternalPageSize - 1;
     private final HashStringAlgorithm hashStringAlgorithm;
 
-    private byte[] keyHashFragment = new byte[InternalPageSize];
+    private final byte[] keyHashFragment = new byte[InternalPageSize];
 
-    private MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
+    private final MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
 
     private long allTimes  = 0;
     private int lostTimes  = 1;

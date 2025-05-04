@@ -12,7 +12,7 @@ public class HotKeyRuleBucket {
 
     private final long id;
 
-    private KeyByteFragment[] keyByteFragmentArray;
+    private final KeyByteFragment[] keyByteFragmentArray;
 
     /**
      * 先存主存储，满了存储到multithreadedCacheBackUp，并通知消费线程去消费
