@@ -48,6 +48,7 @@ public class HotKeyRuleBucketTest {
         ExponentialDistribution exponentialDistribution = new ExponentialDistribution(rate);
         Set<String> hotKeySet = new HashSet<>();
         // 随机选择 10 次元素（次数可按需调整）
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 1000000; i++) {
             // 生成指数分布的随机数
             int randomValue = (int) exponentialDistribution.sample();
@@ -61,9 +62,10 @@ public class HotKeyRuleBucketTest {
             }
 
         }
+        long end = System.currentTimeMillis();
         System.out.println("keyList: " + keyList.size());
         System.out.println("hotKeySet: " + hotKeySet.size());
-
+        System.out.println("一百万此检测耗时: " + (end - start) + "ms");
     }
 
     // 加权随机选择
