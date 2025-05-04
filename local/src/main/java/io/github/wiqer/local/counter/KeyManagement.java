@@ -167,7 +167,7 @@ public class KeyManagement {
         return get(key);
     }
 
-    private boolean get(Object key) {
+    private boolean get(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         //当前自己所在的位置，是哪个小时间窗
         int index = locationIndex();
 //        System.out.println("index:" + index);
@@ -176,14 +176,18 @@ public class KeyManagement {
         //当前index为5时，就清空6、7、8、1。然后把2、3、4、5的加起来就是该窗口内的总和
         clearFromIndex(index);
         int sum = 0;
-        sum += timeSlices[index].getAndSet(key) ? 1 : 0;
+        sum += timeSlices[index].getAndSet(key, predicate) ? 1 : 0;
         //加上前面几个时间片
         for (int i = 1; i < windowSize; i++) {
-            sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key) ? 1 : 0;
+            sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key,predicate) ? 1 : 0;
         }
         lastAddTimestamp = SystemClock.now();
         int localThreshold = Math.min(1, threshold);
         return sum >= localThreshold;
+    }
+
+    private boolean get(Object key) {
+        return get(key,null);
     }
 
     /**
@@ -224,7 +228,21 @@ public class KeyManagement {
 
     public boolean get(Object key, long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
         return CompletableFuture.supplyAsync(() -> get(key), writeThread).get(timeout, unit);
+    }
 
+    /**
+     * 自定义热键定义
+     * @param key
+     * @param timeout
+     * @param unit
+     * @param predicate
+     * @return
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws TimeoutException
+     */
+    public boolean get(Object key, long timeout, TimeUnit unit, ThreeParameterPredicate<Integer, Long, Long> predicate) throws ExecutionException, InterruptedException, TimeoutException {
+        return CompletableFuture.supplyAsync(() -> get(key, predicate), writeThread).get(timeout, unit);
     }
 
 }

@@ -36,13 +36,7 @@ public class KeyByteFragment {
         this.hashStringAlgorithm = hashStringAlgorithm;
     }
 
-    /**
-     * double check 进行读代级检查，不可读清除数据
-     *
-     * @param key
-     * @return
-     */
-    public boolean getAndSet(Object key) {
+    public boolean getAndSet(Object key, ThreeParameterPredicate<Integer, Long, Long> pre) {
         isAvailable = true;
         final int hash = hashStringAlgorithm.getHash(key);
         final int hashIndex = hash & TABLE_MAX_INDEX;
@@ -58,12 +52,44 @@ public class KeyByteFragment {
         if (groupCount <= 0) {
             return false;
         }
+        if (pre != null) {
+            return pre.hotKeyRule(sum, allTimes, groupCount);
+        }
         if (predicate != null) {
             return predicate.hotKeyRule(sum, allTimes, groupCount);
         }
         //比平均数的一半大就算热了, 假设 大部分情况下有一半是无效的内容
         return sum > (allTimes / groupCount) >>> 1;
     }
+    /**
+     * double check 进行读代级检查，不可读清除数据
+     *
+     * @param key
+     * @return
+     */
+    public boolean getAndSet(Object key) {
+        return getAndSet(key, null);
+    }
+
+    public boolean get(Object key, ThreeParameterPredicate<Integer, Long, Long> pre) {
+        if (!isAvailable) {
+            return false;
+        }
+        final int hash = hashStringAlgorithm.getHash(key);
+        int sum = getSum(hash);
+        long groupCount = hyperLogLog.size();
+        if (groupCount <= 0) {
+            return false;
+        }
+        if (pre != null) {
+            return pre.hotKeyRule(sum, allTimes, groupCount);
+        }
+        if (predicate != null) {
+            return predicate.hotKeyRule(sum, allTimes, groupCount);
+        }
+        return sum > (allTimes / groupCount)>>> 1;
+    }
+
 
     /**
      * double check 进行读代级检查，不可读清除数据
@@ -75,13 +101,7 @@ public class KeyByteFragment {
         if (!isAvailable) {
             return false;
         }
-        final int hash = hashStringAlgorithm.getHash(key);
-        int sum = getSum(hash);
-        long groupCount = hyperLogLog.size();
-        if (groupCount <= 0) {
-            return false;
-        }
-        return sum > allTimes / groupCount;
+         return get(key,null);
     }
 
     public long keySum() {

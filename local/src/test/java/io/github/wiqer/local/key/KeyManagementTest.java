@@ -60,9 +60,8 @@ public class KeyManagementTest {
             keyCountMap.compute(key, (k, v) -> v == null ? 1 : v + 1);
 
         }
+        HashMap map = new HashMap(keyCountMap);
         log.info("全部探测的key数量：" + keyCountMap.size());
-        keyCountMap.entrySet().removeIf(e -> e.getValue() < 180);
-        log.info("移除较少访问次数的key后的数量:" + keyCountMap.size());
         log.info("key max time ：" + keyCountMap.values().stream().max(Integer::compareTo).get());
         Set<String> hotKeySet = new HashSet<>();
         // 随机选择 10 次元素（次数可按需调整）
@@ -72,12 +71,13 @@ public class KeyManagementTest {
             if (management.syncGetAndSet(key)) {
                 hotKeySet.add(key);
                 if (keyCountMap.get(key) == null) {
-                    log.warn(key + " ,这个key似乎计算错了");
+                    log.warn(key + " ,这个键在初期算热，但是整体非热键,对应次数："+map.get(key));
                 }
             }
 
         }
         long end = System.currentTimeMillis();
+
         log.info("keyList: " + keyList.size());
         log.info("hotKeySet: " + hotKeySet.size());
         log.info("一百万此检测耗时: " + (end - start) + "ms");
