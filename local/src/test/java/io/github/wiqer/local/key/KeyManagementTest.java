@@ -14,24 +14,25 @@ import java.util.concurrent.*;
 public class KeyManagementTest {
 
     @Test
-    public void KeyManagement( ) throws ExecutionException, InterruptedException {
-        KeyManagement(20,6);
+    public void KeyManagement() throws ExecutionException, InterruptedException {
+        KeyManagement(20, 6);
     }
-    public void KeyManagement(int sizeBit,int rateBit) throws ExecutionException, InterruptedException {
-        if(sizeBit > 31 || sizeBit < 0){
+
+    public void KeyManagement(int sizeBit, int rateBit) throws ExecutionException, InterruptedException {
+        if (sizeBit > 31 || sizeBit < 0) {
             sizeBit = 6;
         }
-        if(rateBit > 31 || rateBit < 0){
+        if (rateBit > 31 || rateBit < 0) {
             rateBit = 4;
         }
-        if(rateBit > sizeBit){
+        if (rateBit > sizeBit) {
             rateBit = sizeBit;
         }
         final int size = 1 << sizeBit;
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(4,2, TimeUnit.MILLISECONDS);
+        KeyManagement management = new KeyManagement(4, 2, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -56,22 +57,22 @@ public class KeyManagementTest {
             int index = randomValue & bit;
             String key = keyList.get(index);
             keySet.add(key);
-            keyCountMap.compute(key, (k, v) -> v == null? 1 : v + 1);
+            keyCountMap.compute(key, (k, v) -> v == null ? 1 : v + 1);
 
         }
         log.info("全部探测的key数量：" + keyCountMap.size());
         keyCountMap.entrySet().removeIf(e -> e.getValue() < 180);
-        log.info("移除较少访问次数的key后的数量:"+keyCountMap.size());
+        log.info("移除较少访问次数的key后的数量:" + keyCountMap.size());
         log.info("key max time ：" + keyCountMap.values().stream().max(Integer::compareTo).get());
         Set<String> hotKeySet = new HashSet<>();
         // 随机选择 10 次元素（次数可按需调整）
         long start = System.currentTimeMillis();
         for (String key : keySet) {
             // 输出随机选择的元素
-            if(management.syncGetAndSet(key)){
+            if (management.syncGetAndSet(key)) {
                 hotKeySet.add(key);
-                if(keyCountMap.get(key) == null){
-                    log.warn(key+" ,这个key似乎计算错了");
+                if (keyCountMap.get(key) == null) {
+                    log.warn(key + " ,这个key似乎计算错了");
                 }
             }
 
@@ -83,24 +84,25 @@ public class KeyManagementTest {
     }
 
     @Test
-    public void KeyManagementGet () throws InterruptedException {
-        KeyManagementGet(20,6);
+    public void KeyManagementGet() throws InterruptedException {
+        KeyManagementGet(20, 6);
     }
-    public void KeyManagementGet(int sizeBit,int rateBit) throws InterruptedException {
-        if(sizeBit > 31 || sizeBit < 0){
+
+    public void KeyManagementGet(int sizeBit, int rateBit) throws InterruptedException {
+        if (sizeBit > 31 || sizeBit < 0) {
             sizeBit = 6;
         }
-        if(rateBit > 31 || rateBit < 0){
+        if (rateBit > 31 || rateBit < 0) {
             rateBit = 4;
         }
-        if(rateBit > sizeBit){
+        if (rateBit > sizeBit) {
             rateBit = sizeBit;
         }
         final int size = 1 << sizeBit;
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(4,30, TimeUnit.MILLISECONDS);
+        KeyManagement management = new KeyManagement(4, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -136,7 +138,7 @@ public class KeyManagementTest {
                 for (String key : heySet) {
                     // 输出随机选择的元素
                     try {
-                        if(management.get(key,20,TimeUnit.MILLISECONDS)){
+                        if (management.get(key, 20, TimeUnit.MILLISECONDS)) {
                             hotKeySet.add(key);
                         }
                     } catch (ExecutionException e) {
@@ -158,24 +160,25 @@ public class KeyManagementTest {
     }
 
     @Test
-    public void KeyManagementGetAndSet () throws InterruptedException {
-        KeyManagementGet(20,6);
+    public void KeyManagementGetAndSet() throws InterruptedException {
+        KeyManagementGet(20, 6);
     }
-    public void KeyManagementGetAndSet(int sizeBit,int rateBit) throws InterruptedException {
-        if(sizeBit > 31 || sizeBit < 0){
+
+    public void KeyManagementGetAndSet(int sizeBit, int rateBit) throws InterruptedException {
+        if (sizeBit > 31 || sizeBit < 0) {
             sizeBit = 6;
         }
-        if(rateBit > 31 || rateBit < 0){
+        if (rateBit > 31 || rateBit < 0) {
             rateBit = 4;
         }
-        if(rateBit > sizeBit){
+        if (rateBit > sizeBit) {
             rateBit = sizeBit;
         }
         final int size = 1 << sizeBit;
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(8,30, TimeUnit.MILLISECONDS);
+        KeyManagement management = new KeyManagement(8, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -210,7 +213,7 @@ public class KeyManagementTest {
                 long start = System.currentTimeMillis();
                 for (String key : heySet) {
                     // 输出随机选择的元素
-                    if(management.getAndSet(key)){
+                    if (management.getAndSet(key)) {
                         hotKeySet.add(key);
                     }
                 }

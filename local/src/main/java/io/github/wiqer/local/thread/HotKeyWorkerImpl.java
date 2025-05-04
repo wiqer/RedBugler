@@ -25,9 +25,11 @@ public class HotKeyWorkerImpl extends FastThread implements HotKeyWorker {
     private final Queue<Runnable> queue;
     private volatile int state = IDLE;
     private volatile boolean shutdown = false;
-    public HotKeyWorkerImpl(String threadName, Consumer<Throwable> jvmExistHandler){
-        this(threadName,jvmExistHandler,Integer.MAX_VALUE - 2);
+
+    public HotKeyWorkerImpl(String threadName, Consumer<Throwable> jvmExistHandler) {
+        this(threadName, jvmExistHandler, Integer.MAX_VALUE - 2);
     }
+
     public HotKeyWorkerImpl(String threadName, Consumer<Throwable> jvmExistHandler, int queueCapacity) {
         super(threadName);
         this.jvmExistHandler = jvmExistHandler;
@@ -38,6 +40,7 @@ public class HotKeyWorkerImpl extends FastThread implements HotKeyWorker {
 
     /**
      * copy from HashMap
+     *
      * @param cap
      * @return
      */

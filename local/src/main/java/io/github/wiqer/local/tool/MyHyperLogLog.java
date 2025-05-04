@@ -16,15 +16,15 @@ public class MyHyperLogLog {
     private final ReentrantLock lock = new ReentrantLock();
 
     public MyHyperLogLog(int nubSize) {
-        if(nubSize <100){
+        if (nubSize < 100) {
             throw new IllegalArgumentException("nubSize must be greater than or equal to 100");
         }
-        this.log2m = (int) Math.max((getIntBitsNumber(nubSize) >>2) - 1 , 4);
-        this.hyperLogLog = new HLL(log2m,5,-1, true, HLLType.EMPTY);
+        this.log2m = (int) Math.max((getIntBitsNumber(nubSize) >> 2) - 1, 4);
+        this.hyperLogLog = new HLL(log2m, 5, -1, true, HLLType.EMPTY);
 
     }
 
-    public void add(int value){
+    public void add(int value) {
         writeTime = SystemClock.now();
         lock.lock();
         try {
@@ -35,7 +35,7 @@ public class MyHyperLogLog {
 
     }
 
-    public void add(MyHyperLogLog other){
+    public void add(MyHyperLogLog other) {
         writeTime = SystemClock.now();
         lock.lock();
         try {
@@ -46,7 +46,7 @@ public class MyHyperLogLog {
 
     }
 
-    public void clear(){
+    public void clear() {
         lock.lock();
         try {
             hyperLogLog.clear();
@@ -59,15 +59,15 @@ public class MyHyperLogLog {
     private static long getIntBitsNumber(long number) {
         int bitsnumber = 0;
         number = number & Integer.MAX_VALUE;
-        while (number > 0){
+        while (number > 0) {
             bitsnumber++;
             number = number >> 1;
         }
         return bitsnumber;
     }
 
-    public Long size(){
-        if(writeTime > readTime){
+    public Long size() {
+        if (writeTime > readTime) {
             readTime = SystemClock.now();
             count = cardinality();
         }

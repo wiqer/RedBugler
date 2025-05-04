@@ -10,9 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class HashFactory implements HashAlgorithmGroup {
-     Map<String, HashStringAlgorithm> map = new ConcurrentHashMap<>(HashType.values().length, 0.5F);
+    Map<String, HashStringAlgorithm> map = new ConcurrentHashMap<>(HashType.values().length, 0.5F);
 
-    public HashFactory(){
+    public HashFactory() {
         for (HashType each : HashType.values()) {
             map.put(each.name(), each.getHashStringAlgorithm());
         }

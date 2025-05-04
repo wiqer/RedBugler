@@ -30,9 +30,9 @@ public class KeyByteFragment {
 
     volatile boolean isAvailable = true;
 
-    private ThreeParameterPredicate<Integer,Long,Long> predicate;
+    private ThreeParameterPredicate<Integer, Long, Long> predicate;
 
-    public KeyByteFragment(HashStringAlgorithm hashStringAlgorithm,ThreeParameterPredicate<Integer,Long,Long> predicate) {
+    public KeyByteFragment(HashStringAlgorithm hashStringAlgorithm, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         this.hashStringAlgorithm = hashStringAlgorithm;
     }
 
@@ -55,14 +55,14 @@ public class KeyByteFragment {
         keyHashFragment[hashIndex]++;
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
-        if(groupCount <= 0){
+        if (groupCount <= 0) {
             return false;
         }
-        if(predicate != null){
-            return predicate.hotKeyRule(sum,allTimes,groupCount);
+        if (predicate != null) {
+            return predicate.hotKeyRule(sum, allTimes, groupCount);
         }
         //比平均数的一半大就算热了, 假设 大部分情况下有一半是无效的内容
-        return sum > ( allTimes / groupCount )>>>1;
+        return sum > (allTimes / groupCount) >>> 1;
     }
 
     /**
@@ -78,7 +78,7 @@ public class KeyByteFragment {
         final int hash = hashStringAlgorithm.getHash(key);
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
-        if(groupCount <= 0){
+        if (groupCount <= 0) {
             return false;
         }
         return sum > allTimes / groupCount;

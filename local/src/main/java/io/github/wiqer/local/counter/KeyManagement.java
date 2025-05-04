@@ -65,41 +65,42 @@ public class KeyManagement {
      */
     private final int threshold;
 
-    private final HotKeyWorker writeThread ;
+    private final HotKeyWorker writeThread;
 
     public KeyManagement(int windowSize, int timeSlice, TimeUnit timeUnit) {
-        this(new HashFactory().getAllAlgorithms(), windowSize,timeSlice,timeUnit,DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()),Integer.MAX_VALUE >>> 4),null);
+        this(new HashFactory().getAllAlgorithms(), windowSize, timeSlice, timeUnit, DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()), Integer.MAX_VALUE >>> 4), null);
     }
 
     /**
      * 主要还是调用这个接口吧，让用户知道具体原理
+     *
      * @param algorithms
      * @param windowSize
      * @param timeSlice
      * @param timeUnit
      * @param loadFactor
      */
-    public KeyManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor,HotKeyWorker writeThread, ThreeParameterPredicate<Integer,Long,Long> predicate) {
+    public KeyManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor, HotKeyWorker writeThread, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal load factor: " +
                     loadFactor);
-        if(timeUnit.equals(TimeUnit.NANOSECONDS)){
+        if (timeUnit.equals(TimeUnit.NANOSECONDS)) {
             throw new IllegalArgumentException("no support TimeUnit.NANOSECONDS");
         }
-        if(timeUnit.equals(TimeUnit.MICROSECONDS)){
+        if (timeUnit.equals(TimeUnit.MICROSECONDS)) {
             throw new IllegalArgumentException("no support TimeUnit.MICROSECONDS");
         }
         this.windowSize = tableSizeFor(windowSize);
         this.timeSliceSize = this.windowSize << 1;
         this.timeMillisPerSlice = timeUnit.toMillis(timeSlice);
-        if (this.timeMillisPerSlice < 2){
+        if (this.timeMillisPerSlice < 2) {
             throw new IllegalArgumentException("time millis per slice must > 1  ");
         }
         this.timeSlices = new HotKeyBucket[this.timeSliceSize];
-        timeSliceMaxIndex =  this.timeSliceSize - 1;
+        timeSliceMaxIndex = this.timeSliceSize - 1;
         threshold = (int) (this.windowSize * loadFactor);
         for (int i = 0; i < this.timeSliceSize; i++) {
-            timeSlices[i] = new HotKeyBucket(algorithms,predicate);
+            timeSlices[i] = new HotKeyBucket(algorithms, predicate);
         }
         this.writeThread = writeThread;
         writeThread.thread().start();
@@ -107,6 +108,7 @@ public class KeyManagement {
 
     /**
      * copy from HashMap
+     *
      * @param cap
      * @return
      */
@@ -157,6 +159,7 @@ public class KeyManagement {
 
     /**
      * 单线程业务可以使用这个
+     *
      * @param key
      * @return
      */
@@ -173,13 +176,13 @@ public class KeyManagement {
         //当前index为5时，就清空6、7、8、1。然后把2、3、4、5的加起来就是该窗口内的总和
         clearFromIndex(index);
         int sum = 0;
-        sum += timeSlices[index].getAndSet(key)? 1 : 0;
+        sum += timeSlices[index].getAndSet(key) ? 1 : 0;
         //加上前面几个时间片
         for (int i = 1; i < windowSize; i++) {
             sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key) ? 1 : 0;
         }
         lastAddTimestamp = SystemClock.now();
-        int localThreshold = Math.min(1,threshold);
+        int localThreshold = Math.min(1, threshold);
         return sum >= localThreshold;
     }
 
@@ -197,18 +200,19 @@ public class KeyManagement {
         clearFromIndex(index);
         int sum = 0;
         //sum += timeSlices[index].getAndSet(key)? 1 : 0;
-        writeThread.submit(()-> timeSlices[index].getAndSet(key));
+        writeThread.submit(() -> timeSlices[index].getAndSet(key));
         //加上前面几个时间片
         for (int i = 0; i < windowSize; i++) {
             sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key) ? 1 : 0;
         }
         lastAddTimestamp = SystemClock.now();
-        int localThreshold = Math.min(1,threshold);
+        int localThreshold = Math.min(1, threshold);
         return sum >= localThreshold;
     }
 
     /**
      * 推荐使用这个调用，读写分离
+     *
      * @param key
      * @param timeout
      * @param unit
@@ -219,7 +223,7 @@ public class KeyManagement {
      */
 
     public boolean get(Object key, long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
-        return CompletableFuture.supplyAsync(()-> get(key), writeThread).get(timeout, unit);
+        return CompletableFuture.supplyAsync(() -> get(key), writeThread).get(timeout, unit);
 
     }
 

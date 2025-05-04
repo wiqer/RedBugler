@@ -32,9 +32,9 @@ public class HotKeyBucket {
     private volatile int status = 0;
 
 
-    public HotKeyBucket(List<HashStringAlgorithm> hashStringAlgorithmList, ThreeParameterPredicate<Integer,Long,Long> predicate) {
+    public HotKeyBucket(List<HashStringAlgorithm> hashStringAlgorithmList, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         this.id = nextId.getAndIncrement();
-        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(algorithm -> new KeyByteFragment(algorithm,predicate)).collect(Collectors.toList());
+        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(algorithm -> new KeyByteFragment(algorithm, predicate)).collect(Collectors.toList());
     }
 
 

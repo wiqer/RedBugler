@@ -15,24 +15,25 @@ import java.util.Set;
 @Slf4j
 public class HotKeyBucketTest {
     @Test
-    public void hotKeyRuleBucket( ) {
-         hotKeyRuleBucket(16,6);
+    public void hotKeyRuleBucket() {
+        hotKeyRuleBucket(16, 6);
     }
-    public void hotKeyRuleBucket(int sizeBit,int rateBit) {
-        if(sizeBit > 31 || sizeBit < 0){
+
+    public void hotKeyRuleBucket(int sizeBit, int rateBit) {
+        if (sizeBit > 31 || sizeBit < 0) {
             sizeBit = 6;
         }
-        if(rateBit > 31 || rateBit < 0){
+        if (rateBit > 31 || rateBit < 0) {
             rateBit = 4;
         }
-        if(rateBit > sizeBit){
+        if (rateBit > sizeBit) {
             rateBit = sizeBit;
         }
         final int size = 1 << sizeBit;
         final int bit = size - 1;
         HashFactory hashFactory = new HashFactory();
 
-        HotKeyBucket bucket = new HotKeyBucket(hashFactory.getAllAlgorithms(),null);
+        HotKeyBucket bucket = new HotKeyBucket(hashFactory.getAllAlgorithms(), null);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -56,7 +57,7 @@ public class HotKeyBucketTest {
             int index = randomValue & bit;
             String key = keyList.get(index);
             // 输出随机选择的元素
-            if(bucket.getAndSet(key)){
+            if (bucket.getAndSet(key)) {
                 hotKeySet.add(key);
             }
 
@@ -84,8 +85,9 @@ public class HotKeyBucketTest {
         }
         return null;
     }
+
     @Test
-    public  void gaussianRandom() {
+    public void gaussianRandom() {
         // 加权随机选择示例
         String[] options = {"A", "B", "C"};
         int[] weights = {1, 2, 3};
@@ -111,8 +113,9 @@ public class HotKeyBucketTest {
         int poissonResult = poissonDistribution.sample();
         System.out.println("泊松分布随机数结果: " + poissonResult);
     }
+
     @Test
-    public  void exponentialDistribution( ) {
+    public void exponentialDistribution() {
         // 初始化一个包含 100 个元素的数组
         int[] array = new int[100];
         for (int i = 0; i < 100; i++) {
