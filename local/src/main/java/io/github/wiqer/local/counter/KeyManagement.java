@@ -241,7 +241,7 @@ public class KeyManagement {
      * @throws InterruptedException
      * @throws TimeoutException
      */
-    public boolean get(Object key, long timeout, TimeUnit unit, ThreeParameterPredicate<Integer, Long, Long> predicate) throws ExecutionException, InterruptedException, TimeoutException {
+    public boolean get(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate, long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
         return CompletableFuture.supplyAsync(() -> get(key, predicate), writeThread).get(timeout, unit);
     }
 
