@@ -2,6 +2,7 @@ package io.github.wiqer.local.counter;
 
 import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.hash.group.HashFactory;
+import io.github.wiqer.local.key.ThreeParameterPredicate;
 import io.github.wiqer.local.thread.FastThread;
 import io.github.wiqer.local.thread.HotKeyWorker;
 import io.github.wiqer.local.thread.HotKeyWorkerImpl;
@@ -67,7 +68,7 @@ public class KeyManagement {
     private final HotKeyWorker writeThread ;
 
     public KeyManagement(int windowSize, int timeSlice, TimeUnit timeUnit) {
-        this(new HashFactory().getAllAlgorithms(), windowSize,timeSlice,timeUnit,DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()),Integer.MAX_VALUE >>> 4));
+        this(new HashFactory().getAllAlgorithms(), windowSize,timeSlice,timeUnit,DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()),Integer.MAX_VALUE >>> 4),null);
     }
 
     /**
@@ -78,7 +79,7 @@ public class KeyManagement {
      * @param timeUnit
      * @param loadFactor
      */
-    public KeyManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor,HotKeyWorker writeThread) {
+    public KeyManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor,HotKeyWorker writeThread, ThreeParameterPredicate<Integer,Long,Long> predicate) {
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal load factor: " +
                     loadFactor);
@@ -98,7 +99,7 @@ public class KeyManagement {
         timeSliceMaxIndex =  this.timeSliceSize - 1;
         threshold = (int) (this.windowSize * loadFactor);
         for (int i = 0; i < this.timeSliceSize; i++) {
-            timeSlices[i] = new HotKeyBucket(algorithms);
+            timeSlices[i] = new HotKeyBucket(algorithms,predicate);
         }
         this.writeThread = writeThread;
         writeThread.thread().start();

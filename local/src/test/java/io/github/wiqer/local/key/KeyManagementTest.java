@@ -7,10 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 @Slf4j
@@ -38,14 +35,17 @@ public class KeyManagementTest {
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
+        Map<String, Integer> keyCountMap = new HashMap<>();
 
         ArrayList<String> keyList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             String key = Integer.toString(rand.nextInt());
             keyList.add(key);
         }
+
         // 指数分布参数
         double rate = 1 << rateBit;
+        log.info("Key management rate: {}", rate);
         ExponentialDistribution exponentialDistribution = new ExponentialDistribution(rate);
         ArrayList<String> keySet = new ArrayList<>(size);
         for (int i = 0; i < 1000000; i++) {
@@ -56,9 +56,13 @@ public class KeyManagementTest {
             int index = randomValue & bit;
             String key = keyList.get(index);
             keySet.add(key);
+            keyCountMap.compute(key, (k, v) -> v == null? 1 : v + 1);
 
         }
-
+        log.info("全部探测的key数量：" + keyCountMap.size());
+        keyCountMap.entrySet().removeIf(e -> e.getValue() < 180);
+        log.info("移除较少访问次数的key后的数量:"+keyCountMap.size());
+        log.info("key max time ：" + keyCountMap.values().stream().max(Integer::compareTo).get());
         Set<String> hotKeySet = new HashSet<>();
         // 随机选择 10 次元素（次数可按需调整）
         long start = System.currentTimeMillis();
@@ -66,6 +70,9 @@ public class KeyManagementTest {
             // 输出随机选择的元素
             if(management.syncGetAndSet(key)){
                 hotKeySet.add(key);
+                if(keyCountMap.get(key) == null){
+                    log.warn(key+" ,这个key似乎计算错了");
+                }
             }
 
         }
@@ -168,7 +175,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(4,30, TimeUnit.MILLISECONDS);
+        KeyManagement management = new KeyManagement(8,30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();

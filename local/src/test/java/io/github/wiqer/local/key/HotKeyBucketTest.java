@@ -32,7 +32,7 @@ public class HotKeyBucketTest {
         final int bit = size - 1;
         HashFactory hashFactory = new HashFactory();
 
-        HotKeyBucket bucket = new HotKeyBucket(hashFactory.getAllAlgorithms());
+        HotKeyBucket bucket = new HotKeyBucket(hashFactory.getAllAlgorithms(),null);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();

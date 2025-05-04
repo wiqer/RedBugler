@@ -14,7 +14,9 @@ public class KeyByteFragment {
     static final int InternalPageSize = Unsafe.getUnsafe().pageSize();
     static final int TABLE_MAX_INDEX = InternalPageSize - 1;
     private final HashStringAlgorithm hashStringAlgorithm;
-
+    /**
+     * 没必要上long 或者 int 本身就是模糊运算
+     */
     private final byte[] keyHashFragment = new byte[InternalPageSize];
 
     private final MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
@@ -28,7 +30,9 @@ public class KeyByteFragment {
 
     volatile boolean isAvailable = true;
 
-    public KeyByteFragment(HashStringAlgorithm hashStringAlgorithm) {
+    private ThreeParameterPredicate<Integer,Long,Long> predicate;
+
+    public KeyByteFragment(HashStringAlgorithm hashStringAlgorithm,ThreeParameterPredicate<Integer,Long,Long> predicate) {
         this.hashStringAlgorithm = hashStringAlgorithm;
     }
 
@@ -54,7 +58,11 @@ public class KeyByteFragment {
         if(groupCount <= 0){
             return false;
         }
-        return sum > allTimes / groupCount;
+        if(predicate != null){
+            return predicate.hotKeyRule(sum,allTimes,groupCount);
+        }
+        //比平均数的一半大就算热了, 假设 大部分情况下有一半是无效的内容
+        return sum > ( allTimes / groupCount )>>>1;
     }
 
     /**
@@ -64,6 +72,9 @@ public class KeyByteFragment {
      * @return
      */
     public boolean get(Object key) {
+        if (!isAvailable) {
+            return false;
+        }
         final int hash = hashStringAlgorithm.getHash(key);
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();

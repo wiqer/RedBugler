@@ -2,6 +2,7 @@ package io.github.wiqer.local.counter;
 
 import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.key.KeyByteFragment;
+import io.github.wiqer.local.key.ThreeParameterPredicate;
 import lombok.Getter;
 
 import java.util.List;
@@ -31,9 +32,9 @@ public class HotKeyBucket {
     private volatile int status = 0;
 
 
-    public HotKeyBucket(List<HashStringAlgorithm> hashStringAlgorithmList) {
+    public HotKeyBucket(List<HashStringAlgorithm> hashStringAlgorithmList, ThreeParameterPredicate<Integer,Long,Long> predicate) {
         this.id = nextId.getAndIncrement();
-        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(KeyByteFragment::new).collect(Collectors.toList());
+        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(algorithm -> new KeyByteFragment(algorithm,predicate)).collect(Collectors.toList());
     }
 
 
