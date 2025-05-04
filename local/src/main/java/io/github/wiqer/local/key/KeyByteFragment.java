@@ -19,8 +19,8 @@ public class KeyByteFragment {
 
     private final MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
 
-    private long allTimes  = 0;
-    private int lostTimes  = 1;
+    private long allTimes = 0;
+    private int lostTimes = 1;
     /**
      *
      */
@@ -34,37 +34,46 @@ public class KeyByteFragment {
 
     /**
      * double check 进行读代级检查，不可读清除数据
+     *
      * @param key
      * @return
      */
-    public boolean getAndSet(Object key){
+    public boolean getAndSet(Object key) {
+        isAvailable = true;
         final int hash = hashStringAlgorithm.getHash(key);
         final int hashIndex = hash & TABLE_MAX_INDEX;
         hyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
-        if(times == 127){
+        if (times == 127) {
             reBaseTable();
         }
         allTimes++;
         keyHashFragment[hashIndex]++;
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
+        if(groupCount <= 0){
+            return false;
+        }
         return sum > allTimes / groupCount;
     }
 
     /**
      * double check 进行读代级检查，不可读清除数据
+     *
      * @param key
      * @return
      */
-    public boolean get(Object key){
+    public boolean get(Object key) {
         final int hash = hashStringAlgorithm.getHash(key);
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
+        if(groupCount <= 0){
+            return false;
+        }
         return sum > allTimes / groupCount;
     }
 
-    public long keySum(){
+    public long keySum() {
         return hyperLogLog.size();
     }
 
@@ -74,29 +83,34 @@ public class KeyByteFragment {
 
     private void reBaseTable() {
         lostTimes++;
-        for (int i = 0; i < keyHashFragment.length; i++){
-            if(keyHashFragment[i] == 0){
+        for (int i = 0; i < keyHashFragment.length; i++) {
+            if (keyHashFragment[i] == 0) {
                 continue;
             }
-            keyHashFragment[i] = (byte) (keyHashFragment[i]  >> 1);
+            keyHashFragment[i] = (byte) (keyHashFragment[i] >> 1);
         }
 
     }
 
-    public int getSum(int hash){
+    public int getSum(int hash) {
         return keyHashFragment[hash & TABLE_MAX_INDEX] * lostTimes;
     }
 
     /**
      * 同步删除
-     *
      */
-    public synchronized void clear() {
-        if(isAvailable){
-            Arrays.fill(keyHashFragment, (byte) 0);
-            this.hyperLogLog.clear();
-            isAvailable = false;
+    public void clear() {
+        if (isAvailable) {
+            synchronized (this) {
+                if (isAvailable) {
+                    Arrays.fill(keyHashFragment, (byte) 0);
+                    this.hyperLogLog.clear();
+                    isAvailable = false;
+                }
+            }
         }
+
+
     }
 
     public boolean getHashAlgorithm(HashStringAlgorithm ha) {
