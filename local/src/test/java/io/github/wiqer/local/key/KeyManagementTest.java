@@ -78,9 +78,18 @@ public class KeyManagementTest {
         }
         long end = System.currentTimeMillis();
 
+
         log.info("keyList: " + keyList.size());
         log.info("hotKeySet: " + hotKeySet.size());
-        log.info("一百万此检测耗时: " + (end - start) + "ms");
+        log.info("一百万次检测耗时: " + (end - start) + "ms");
+        start = System.currentTimeMillis();
+        keyCountMap.clear();
+        for (String key : keySet) {
+            keyCountMap.compute(key, (k, v) -> v == null ? 1 : v + 1);
+
+        }
+        end = System.currentTimeMillis();
+        log.info("一百万次hashmap插入耗时: " + (end - start) + "ms");
     }
 
     @Test
