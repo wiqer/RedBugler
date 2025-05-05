@@ -5,6 +5,7 @@ import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.tool.MyHyperLogLog;
 
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 一个计数片，其中一个HHL 一个hash算法，一个计数表
@@ -20,6 +21,8 @@ public class KeyByteFragment {
     private final byte[] keyHashFragment = new byte[InternalPageSize];
 
     private final MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
+
+    private ReentrantLock lock = new ReentrantLock();
 
     private long allTimes = 0;
     private int lostTimes = 1;
@@ -37,8 +40,17 @@ public class KeyByteFragment {
     }
 
     public boolean getAndSet(Object key, ThreeParameterPredicate<Integer, Long, Long> pre) {
-        isAvailable = true;
         final int hash = hashStringAlgorithm.getHash(key);
+
+        setByHash(hash);
+
+       final long groupCount = hyperLogLog.size();
+        int sum = getSum(hash);
+        return calculation(pre, sum, groupCount);
+    }
+
+    public void setByHash(int hash) {
+        isAvailable = true;
         final int hashIndex = hash & TABLE_MAX_INDEX;
         hyperLogLog.add(hash);
         byte times = keyHashFragment[hashIndex];
@@ -47,19 +59,12 @@ public class KeyByteFragment {
         }
         allTimes++;
         keyHashFragment[hashIndex]++;
-        int sum = getSum(hash);
-        long groupCount = hyperLogLog.size();
-        if (groupCount <= 0) {
-            return false;
-        }
-        if (pre != null) {
-            return pre.hotKeyRule(sum, allTimes, groupCount);
-        }
-        if (predicate != null) {
-            return predicate.hotKeyRule(sum, allTimes, groupCount);
-        }
-        //比平均数的一半大就算热了, 假设 大部分情况下有一半是无效的内容
-        return sum > (allTimes / groupCount) >>> 1;
+    }
+
+    public void set(Object key) {
+
+        final int hash = hashStringAlgorithm.getHash(key);
+        setByHash(hash);
     }
     /**
      * double check 进行读代级检查，不可读清除数据
@@ -78,6 +83,10 @@ public class KeyByteFragment {
         final int hash = hashStringAlgorithm.getHash(key);
         int sum = getSum(hash);
         long groupCount = hyperLogLog.size();
+        return calculation(pre, sum, groupCount);
+    }
+
+    private boolean calculation(ThreeParameterPredicate<Integer, Long, Long> pre, int sum, long groupCount) {
         if (groupCount <= 0) {
             return false;
         }
@@ -132,16 +141,19 @@ public class KeyByteFragment {
      */
     public void clear() {
         if (isAvailable) {
-            synchronized (this) {
-                if (isAvailable) {
-                    Arrays.fill(keyHashFragment, (byte) 0);
-                    this.hyperLogLog.clear();
-                    isAvailable = false;
+            boolean tryLock = lock.tryLock();
+            if (tryLock) {
+                try {
+                    if (isAvailable) {
+                        Arrays.fill(keyHashFragment, (byte) 0);
+                        this.hyperLogLog.clear();
+                        isAvailable = false;
+                    }
+                } finally {
+                    lock.unlock();
                 }
             }
         }
-
-
     }
 
     public boolean getHashAlgorithm(HashStringAlgorithm ha) {

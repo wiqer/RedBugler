@@ -39,14 +39,10 @@ public class HotKeyBucket {
 
     public boolean getAndSet(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         if (status == 1) {
-            synchronized (this) {
-                if (status == 1) {
-                    for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                        keyByteFragment.clear();
-                    }
-                    status = 2;
-                }
+            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
+                keyByteFragment.clear();
             }
+            status = 2;
         }
         status = 0;
         boolean result = true;
@@ -55,33 +51,34 @@ public class HotKeyBucket {
         }
         return result;
     }
-    public boolean getAndSet(Object key) {
+
+    public void set(Object key) {
         if (status == 1) {
-            synchronized (this) {
-                if (status == 1) {
-                    for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                        keyByteFragment.clear();
-                    }
-                    status = 2;
-                }
+            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
+                keyByteFragment.clear();
             }
+            status = 2;
         }
         status = 0;
-        boolean result = true;
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-            result &= keyByteFragment.getAndSet(key);
+            keyByteFragment.set(key);
         }
-        return result;
+    }
+
+
+    public boolean getAndSet(Object key) {
+        return getAndSet(key, null);
     }
 
 
     public boolean get(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         boolean result = true;
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-            result &= keyByteFragment.get(key,predicate);
+            result &= keyByteFragment.get(key, predicate);
         }
         return result;
     }
+
     public boolean get(Object key) {
         return get(key, null);
     }
@@ -89,18 +86,12 @@ public class HotKeyBucket {
 
     public void clear() {
         if (status == 0) {
-            synchronized (this) {
-                if (status == 0) {
-                    status = 1;
-                    for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                        keyByteFragment.clear();
-                    }
-                    status = 2;
-                }
+            status = 1;
+            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
+                keyByteFragment.clear();
             }
+            status = 2;
         }
-
-
     }
 
 }

@@ -4,6 +4,7 @@ import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.hash.group.HashFactory;
 import io.github.wiqer.local.key.ThreeParameterPredicate;
 import io.github.wiqer.local.thread.FastThread;
+import io.github.wiqer.local.thread.HotKeyRunnable;
 import io.github.wiqer.local.thread.HotKeyWorker;
 import io.github.wiqer.local.thread.HotKeyWorkerImpl;
 import io.github.wiqer.local.tool.SystemClock;
@@ -150,10 +151,23 @@ public class KeyManagement {
     private void clearFromIndex(int index) {
         for (int i = 1; i <= windowSize; i++) {
             int j = index + i;
-            if (j >= windowSize * 2) {
-                j -= windowSize * 2;
+            if (j >= (windowSize << 1)){
+                j -= (windowSize << 1);
             }
             timeSlices[j].clear();
+        }
+    }
+
+    private void clearFromIndexSmall(int index) {
+        final int max = windowSize + index;
+        for (int i = Math.max(1,windowSize>>1) + index; i <= max; i++) {
+            if (i >= (windowSize << 1)){
+                ;
+                timeSlices[i - (windowSize << 1)].clear();
+            }else {
+                timeSlices[i].clear();
+            }
+
         }
     }
 
@@ -194,24 +208,31 @@ public class KeyManagement {
      * 增加count个数量,
      * 混合并发调用，同时读写，可能出现幻觉，对一致性要求高的场景慎用
      */
-    public boolean getAndSet(Object key) {
+    public boolean getAndSet(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         //当前自己所在的位置，是哪个小时间窗
-        int index = locationIndex();
+        final int index = locationIndex();
 //        System.out.println("index:" + index);
         //然后清空自己前面windowSize到2*windowSize之间的数据格的数据
         //譬如1秒分4个窗口，那么数组共计8个窗口
         //当前index为5时，就清空6、7、8、1。然后把2、3、4、5的加起来就是该窗口内的总和
-        clearFromIndex(index);
+        clearFromIndexSmall(index);
         int sum = 0;
         //sum += timeSlices[index].getAndSet(key)? 1 : 0;
-        writeThread.submit(() -> timeSlices[index].getAndSet(key));
+        final HotKeyBucket currentBucket = timeSlices[index];
+        writeThread.submit(new HotKeyRunnable(currentBucket, index, key));
         //加上前面几个时间片
-        for (int i = 0; i < windowSize; i++) {
+        //往后挫一位，减少并发冲突
+        //业务意义与get不同，getAndSet不计算当前窗口
+        for (int i = 1; i < windowSize + 1; i++) {
             sum += timeSlices[(index - i + timeSliceSize) & timeSliceMaxIndex].get(key) ? 1 : 0;
         }
         lastAddTimestamp = SystemClock.now();
         int localThreshold = Math.min(1, threshold);
         return sum >= localThreshold;
+    }
+
+    public boolean getAndSet(Object key) {
+        return getAndSet(key, null);
     }
 
     /**

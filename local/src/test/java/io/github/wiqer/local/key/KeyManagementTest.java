@@ -32,7 +32,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(4, 2, TimeUnit.MILLISECONDS);
+        KeyManagement management = new KeyManagement(2, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -68,7 +68,7 @@ public class KeyManagementTest {
         long start = System.currentTimeMillis();
         for (String key : keySet) {
             // 输出随机选择的元素
-            if (management.syncGetAndSet(key)) {
+            if (management.getAndSet(key)) {
                 hotKeySet.add(key);
                 if (keyCountMap.get(key) == null) {
                     log.warn(key + " ,这个键在初期算热，但是整体非热键,对应次数：" + map.get(key));
