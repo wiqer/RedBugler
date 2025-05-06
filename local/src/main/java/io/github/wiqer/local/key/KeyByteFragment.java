@@ -22,14 +22,10 @@ public class KeyByteFragment {
 
     private final MyHyperLogLog hyperLogLog = new MyHyperLogLog(1000);
 
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     private long allTimes = 0;
     private int lostTimes = 1;
-    /**
-     *
-     */
-    private volatile long era = 0;
 
     volatile boolean isAvailable = true;
 
