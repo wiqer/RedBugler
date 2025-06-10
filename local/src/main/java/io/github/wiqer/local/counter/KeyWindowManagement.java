@@ -3,7 +3,6 @@ package io.github.wiqer.local.counter;
 import io.github.wiqer.local.hash.HashStringAlgorithm;
 import io.github.wiqer.local.hash.group.HashFactory;
 import io.github.wiqer.local.key.ThreeParameterPredicate;
-import io.github.wiqer.local.thread.FastThread;
 import io.github.wiqer.local.thread.HotKeyRunnable;
 import io.github.wiqer.local.thread.HotKeyWorker;
 import io.github.wiqer.local.thread.HotKeyWorkerImpl;
@@ -15,14 +14,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 /**
  * copy from https://gitee.com/jd-platform-opensource/hotkey com.jd.platform.hotkey.worker.tool.SlidingWindow
  * 此处借鉴至SlidingWindow 的滑动窗口思想，这么写比较简单
  */
 @Slf4j
-public class KeyManagement {
+public class KeyWindowManagement {
     /**
      * 这个搞太多似乎也没啥意义
      */
@@ -36,7 +34,7 @@ public class KeyManagement {
     /**
      * 循环队列，就是装多个窗口用，该数量是windowSize的2倍
      */
-    private final HotKeyBucket[] timeSlices;
+    private final HotKeyByteBucket[] timeSlices;
     /**
      * 队列的总长度
      */
@@ -68,7 +66,7 @@ public class KeyManagement {
 
     private final HotKeyWorker writeThread;
 
-    public KeyManagement(int windowSize, int timeSlice, TimeUnit timeUnit) {
+    public KeyWindowManagement(int windowSize, int timeSlice, TimeUnit timeUnit) {
         this(new HashFactory().getAllFastAlgorithms(), windowSize, timeSlice, timeUnit, DEFAULT_LOAD_FACTOR, new HotKeyWorkerImpl("", throwable -> log.error(throwable.getMessage()), Integer.MAX_VALUE >>> 4), null);
     }
 
@@ -81,7 +79,7 @@ public class KeyManagement {
      * @param timeUnit
      * @param loadFactor
      */
-    public KeyManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor, HotKeyWorker writeThread, ThreeParameterPredicate<Integer, Long, Long> predicate) {
+    public KeyWindowManagement(List<HashStringAlgorithm> algorithms, int windowSize, int timeSlice, TimeUnit timeUnit, float loadFactor, HotKeyWorker writeThread, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal load factor: " +
                     loadFactor);
@@ -97,11 +95,11 @@ public class KeyManagement {
         if (this.timeMillisPerSlice < 2) {
             throw new IllegalArgumentException("time millis per slice must > 1  ");
         }
-        this.timeSlices = new HotKeyBucket[this.timeSliceSize];
+        this.timeSlices = new HotKeyByteBucket[this.timeSliceSize];
         timeSliceMaxIndex = this.timeSliceSize - 1;
         threshold = (int) (this.windowSize * loadFactor);
         for (int i = 0; i < this.timeSliceSize; i++) {
-            timeSlices[i] = new HotKeyBucket(algorithms, predicate);
+            timeSlices[i] = new HotKeyByteBucket(algorithms, predicate);
         }
         this.writeThread = writeThread;
         writeThread.thread().start();
@@ -218,7 +216,7 @@ public class KeyManagement {
         clearFromIndexSmall(index);
         int sum = 0;
         //sum += timeSlices[index].getAndSet(key)? 1 : 0;
-        final HotKeyBucket currentBucket = timeSlices[index];
+        final HotKeyByteBucket currentBucket = timeSlices[index];
         writeThread.submit(new HotKeyRunnable(currentBucket, index, key));
         //加上前面几个时间片
         //往后挫一位，减少并发冲突

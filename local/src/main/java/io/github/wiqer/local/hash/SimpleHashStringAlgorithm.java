@@ -1,34 +1,26 @@
 package io.github.wiqer.local.hash;
 
+/**
+ * 简单哈希算法实现
+ * 特点：
+ * 1. 实现简单
+ * 2. 性能最好
+ * 3. 分布一般
+ */
 public class SimpleHashStringAlgorithm implements HashStringAlgorithm {
     @Override
-    public Integer getHash(Object key) {
-        return hash(key.toString());
-    }
-
-    @Override
-    public Integer hash(String key) {
+    public int getHash(Object key) {
+        if (key == null) {
+            return 0;
+        }
+        
+        String str = key.toString();
         int hash = 0;
-        int checkSize = Math.min(key.length(), 64);
-        for (int i = 0; i < checkSize; i++) {
-            final char value =key.charAt(i);
-            hash = getHash(hash, value);
+        
+        for (int i = 0; i < str.length(); i++) {
+            hash = hash * 31 + str.charAt(i);
         }
+        
         return hash;
     }
-
-
-    private int getHash(int hash, char value) {
-        if(value > 0x2F && value < 0x3A) {
-            hash += hash * 10 + (value - 0x30);
-        }else {
-            hash += value ;
-            hash = (hash ^ hash >>> 7) * -490898;
-            hash = (hash ^ hash >>> 7) * -464877;
-            hash = hash ^ hash >>> 7;
-        }
-        return hash;
-    }
-
-
 }

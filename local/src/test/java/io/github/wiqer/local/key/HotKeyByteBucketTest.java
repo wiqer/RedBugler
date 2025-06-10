@@ -1,7 +1,7 @@
 package io.github.wiqer.local.key;
 
 import io.github.wiqer.local.hash.group.HashFactory;
-import io.github.wiqer.local.counter.HotKeyBucket;
+import io.github.wiqer.local.counter.HotKeyByteBucket;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.PoissonDistribution;
@@ -13,7 +13,7 @@ import java.util.Random;
 import java.util.Set;
 
 @Slf4j
-public class HotKeyBucketTest {
+public class HotKeyByteBucketTest {
     @Test
     public void hotKeyRuleBucket() {
         hotKeyRuleBucket(16, 6);
@@ -33,7 +33,7 @@ public class HotKeyBucketTest {
         final int bit = size - 1;
         HashFactory hashFactory = new HashFactory();
 
-        HotKeyBucket bucket = new HotKeyBucket(hashFactory.getAllAlgorithms(), null);
+        HotKeyByteBucket bucket = new HotKeyByteBucket(hashFactory.getAllAlgorithms(), null);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();

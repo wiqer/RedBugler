@@ -6,10 +6,11 @@ import io.github.wiqer.local.key.ThreeParameterPredicate;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class HotKeyBucket {
+public class HotKeyByteBucket {
 
     private static final AtomicLong nextId = new AtomicLong(0);
 
@@ -17,6 +18,15 @@ public class HotKeyBucket {
     private final long id;
 
     private final List<KeyByteFragment> keyByteFragmentArray;
+
+    /**
+     * 状态定义：
+     * 0 - 可用状态
+     * 1 - 正在删除
+     * 2 - 已删除完成
+     */
+    @Getter
+    private final AtomicInteger status = new AtomicInteger(0);
 
     /**
      * 先存主存储，满了存储到multithreadedCacheBackUp，并通知消费线程去消费
@@ -28,23 +38,25 @@ public class HotKeyBucket {
      * /**
      * | **** |0 可用| 2 已删除完成| 1 正在删除|当前活动时期的运行 add状态，0 未运行，1，正在运行|
      */
-    @Getter
-    private volatile int status = 0;
 
-
-    public HotKeyBucket(List<HashStringAlgorithm> hashStringAlgorithmList, ThreeParameterPredicate<Integer, Long, Long> predicate) {
+    public HotKeyByteBucket(List<HashStringAlgorithm> hashStringAlgorithmList, ThreeParameterPredicate<Integer, Long, Long> predicate) {
         this.id = nextId.getAndIncrement();
-        this.keyByteFragmentArray = hashStringAlgorithmList.stream().map(algorithm -> new KeyByteFragment(algorithm, predicate)).collect(Collectors.toList());
+        this.keyByteFragmentArray = hashStringAlgorithmList.stream()
+                .map(algorithm -> new KeyByteFragment(algorithm, predicate))
+                .collect(Collectors.toList());
     }
 
     public boolean getAndSet(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
-        if (status == 1) {
-            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                keyByteFragment.clear();
-            }
-            status = 2;
+        // 如果正在删除，等待删除完成
+        if (status.get() == 1) {
+            return false;
         }
-        status = 0;
+        
+        // 尝试将状态设置为可用
+        if (!status.compareAndSet(2, 0)) {
+            return false;
+        }
+
         boolean result = true;
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
             result &= keyByteFragment.getAndSet(key, predicate);
@@ -53,25 +65,31 @@ public class HotKeyBucket {
     }
 
     public void set(Object key) {
-        if (status == 1) {
-            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                keyByteFragment.clear();
-            }
-            status = 2;
+        // 如果正在删除，等待删除完成
+        if (status.get() == 1) {
+            return;
         }
-        status = 0;
+        
+        // 尝试将状态设置为可用
+        if (!status.compareAndSet(2, 0)) {
+            return;
+        }
+
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
             keyByteFragment.set(key);
         }
     }
 
-
     public boolean getAndSet(Object key) {
         return getAndSet(key, null);
     }
 
-
     public boolean get(Object key, ThreeParameterPredicate<Integer, Long, Long> predicate) {
+        // 如果正在删除或已删除完成，直接返回false
+        if (status.get() != 0) {
+            return false;
+        }
+
         boolean result = true;
         for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
             result &= keyByteFragment.get(key, predicate);
@@ -83,15 +101,21 @@ public class HotKeyBucket {
         return get(key, null);
     }
 
-
+    /**
+     * 清理数据
+     * 使用原子操作确保状态转换的正确性
+     */
     public void clear() {
-        if (status == 0) {
-            status = 1;
-            for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
-                keyByteFragment.clear();
+        // 尝试将状态从可用(0)转换为正在删除(1)
+        if (status.compareAndSet(0, 1)) {
+            try {
+                for (KeyByteFragment keyByteFragment : keyByteFragmentArray) {
+                    keyByteFragment.clear();
+                }
+            } finally {
+                // 无论清理是否成功，都将状态设置为已删除完成(2)
+                status.set(2);
             }
-            status = 2;
         }
     }
-
 }

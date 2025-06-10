@@ -1,22 +1,26 @@
 package io.github.wiqer.local.hash;
 
+/**
+ * 64位哈希算法实现
+ * 特点：
+ * 1. 使用64位哈希
+ * 2. 性能较好
+ * 3. 分布均匀
+ */
 public class Bit64HashStringAlgorithm implements HashStringAlgorithm {
     @Override
-    public Integer getHash(Object key) {
-        return hash(key.toString());
-    }
-
-    @Override
-    public Integer hash(String key) {
-        int hash = 0;
-        int checkSize = Math.min(key.length(), 64);
-        for (int i = 0; i < checkSize; i++) {
-            final char value = (char) ((key.charAt(i) - '0') & 63);
-            hash += hash << 4;
-            hash += value;
-
+    public int getHash(Object key) {
+        if (key == null) {
+            return 0;
         }
-        return hash;
+        
+        String str = key.toString();
+        long h = 0x7fffffffffffffffL;
+        
+        for (int i = 0; i < str.length(); i++) {
+            h = h * 31 + str.charAt(i);
+        }
+        
+        return (int)(h & 0x7fffffff);
     }
-
 }

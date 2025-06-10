@@ -5,15 +5,9 @@ package io.github.wiqer.local.hash;
  */
 public class JavaHashString3Algorithm implements HashStringAlgorithm {
     @Override
-    public Integer getHash(Object key) {
+    public int getHash(Object key) {
         int h = key.hashCode();
         h = (h >>> 3) | (h << (29)) ;
         return (h ) ^ (h >>> 16);
     }
-
-    @Override
-    public Integer hash(String key) {
-        return getHash(key);
-    }
-
 }

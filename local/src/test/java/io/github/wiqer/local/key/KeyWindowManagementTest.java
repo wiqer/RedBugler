@@ -1,8 +1,6 @@
 package io.github.wiqer.local.key;
 
-import io.github.wiqer.local.counter.HotKeyBucket;
-import io.github.wiqer.local.counter.KeyManagement;
-import io.github.wiqer.local.hash.group.HashFactory;
+import io.github.wiqer.local.counter.KeyWindowManagement;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.junit.Test;
@@ -11,7 +9,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 @Slf4j
-public class KeyManagementTest {
+public class KeyWindowManagementTest {
 
     @Test
     public void KeyManagement() throws ExecutionException, InterruptedException {
@@ -32,7 +30,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(2, 30, TimeUnit.MILLISECONDS);
+        KeyWindowManagement management = new KeyWindowManagement(2, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -111,7 +109,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(4, 30, TimeUnit.MILLISECONDS);
+        KeyWindowManagement management = new KeyWindowManagement(4, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -187,7 +185,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(8, 30, TimeUnit.MILLISECONDS);
+        KeyWindowManagement management = new KeyWindowManagement(8, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();
@@ -255,7 +253,7 @@ public class KeyManagementTest {
         final int bit = size - 1;
 
 
-        KeyManagement management = new KeyManagement(8, 30, TimeUnit.MILLISECONDS);
+        KeyWindowManagement management = new KeyWindowManagement(8, 30, TimeUnit.MILLISECONDS);
         // 测试添加一些数据
         //HLL myHyperLogLog = new HLL(16, 5);
         Random rand = new Random();

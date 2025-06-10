@@ -5,19 +5,14 @@ package io.github.wiqer.local.hash;
  */
 public class JavaHashStringOneAlgorithm implements HashStringAlgorithm {
     @Override
-    public Integer getHash(Object key) {
+    public int getHash(Object key) {
         int h = key.hashCode();
         h = (h >>> 1) | (h << (31)) ;
         return (h ) ^ (h >>> 16);
     }
 
     @Override
-    public Integer hash(String key) {
-        int h = key.hashCode();
-        h = (h >>> 1) | (h << (31)) ;
-        return (h ) ^ (h >>> 16);
-    }
-    public Boolean isFast(){
+    public boolean isFast(){
         return true;
     }
 }

@@ -1,12 +1,59 @@
 # RedBugler
 本地热键探测，支持无规则探测热键，也支持根据键的访问量、占比、键总量、总访问次数等规则自动计算是否是热键
 分布式热键探测版本有时间再继续开发
-## 原理：多轮哈希（Multi - Hashing）
-一个缓存项使用多个不同的哈希函数，将其映射到频率草图的多个不同位置。
-这样可以使每个缓存项的访问频率信息更均匀地分布在频率草图中，提高频率统计的准确性。
 
-作用：
-减少哈希冲突对频率统计的干扰，使频率草图能够更准确地反映每个缓存项的实际访问频率。
+## 项目结构
+```
+local/src/main/java/io/github/wiqer/local/
+├── counter/          # 计数器实现
+│   ├── HotKeyIntBucket.java    # 整数类型热键桶
+│   ├── HotKeyByteBucket.java   # 字节类型热键桶
+│   └── KeyWindowManagement.java # 滑动窗口管理
+├── hash/             # 哈希算法实现
+├── key/              # 键处理相关
+│   ├── KeyByteFragment.java    # 字节类型键分片
+│   └── KeyIntFragment.java     # 整数类型键分片
+├── thread/           # 线程相关实现
+└── tool/             # 工具类
+```
+
+## 核心特性
+1. 多轮哈希（Multi-Hashing）实现
+   - 使用多个不同的哈希函数，将键映射到频率草图的多个不同位置
+   - 减少哈希冲突，提高频率统计准确性
+   - 支持自定义哈希算法
+
+2. 滑动窗口机制
+   - 支持时间窗口管理
+   - 自动清理过期数据
+   - 可配置窗口大小和清理策略
+
+3. 热键检测策略
+   - 支持自定义热键判定规则
+   - 基于最小计数分片的热键判定
+   - 支持动态阈值调整
+
+4. 高性能设计
+   - 使用分片计数减少竞争
+   - 支持动态扩容
+   - 并发安全实现
+
+## 使用示例
+```java
+// 创建热键检测器
+List<HashStringAlgorithm> algorithms = new HashFactory().getAllAlgorithms();
+HotKeyIntBucket bucket = new HotKeyIntBucket(algorithms, null);
+
+// 记录键访问
+bucket.set("key1");
+
+// 检查是否是热键
+boolean isHot = bucket.getAndSet("key1");
+
+// 使用自定义规则检查热键
+boolean isHotWithRule = bucket.get("key1", (sum, allTimes, groupCount) -> 
+    sum > (allTimes / groupCount) >>> 1);
+```
 
 ## 各方案对比
 | 方案                                 | RedBugler                             | JD-hotkey          | caffine                     | Bloom Filter           | 基于时间序列分析的方法                              | 基于机器学习的方法          |
@@ -20,4 +67,21 @@
 | 本地内存占用                             | 限量的，每个hash算法计算单元约占40kb                | 热键量+每次全量上报的键量      | 支持热键的数量                     | Bitmap的大小              | 无                                        | 模型大小               |
 | 记忆性                                | 部分记忆性，自行定义窗口有效时间                      | 在控制台手写特定键          | 无                           | 记忆能力是此方案的负担，需要定期失忆才可用  | 有                                        | 有                  |
 | 问题                                 | 幻觉问题：hash算法少容易出幻觉，多了CPU消耗低延迟高         | 全量键上报IO瓶颈高、分布式成本较高 | 内存占用大、CPU占用高、存键少没作用、存多了容易崩溃 | 基本不可用，无法解决准确性          | 训练和调优比较复杂，维护成本较高                         | 无法及时响应热键的变化、容易出现幻觉 |
+
+## 最新更新
+1. 优化热键检测逻辑
+   - 修改为使用最小计数的KeyByteFragment进行热度计算
+   - 提高热键检测的准确性
+   - 减少误判率
+
+2. 性能优化
+   - 优化内存使用
+   - 提高并发处理能力
+   - 减少CPU占用
+
+## 待优化项
+1. 分布式支持
+2. 更多哈希算法支持
+3. 更灵活的热键规则配置
+4. 性能监控和统计
 
