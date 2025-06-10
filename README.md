@@ -85,3 +85,5 @@ boolean isHotWithRule = bucket.get("key1", (sum, allTimes, groupCount) ->
 3. 更灵活的热键规则配置
 4. 性能监控和统计
 
+## 代码解析
+https://deepwiki.com/wiqer/RedBugler
